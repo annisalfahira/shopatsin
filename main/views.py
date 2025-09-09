@@ -1,0 +1,11 @@
+from django.shortcuts import render
+
+# Create your views here.
+
+def show_main(request):
+    context = {
+        "app_name": "ShopAtSin",              
+        "student_name": "Annisa Muthia Alfahira",  
+        "student_class": "F"   
+    }
+    return render(request, "main.html", context)
