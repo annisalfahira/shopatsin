@@ -1,12 +1,113 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ app_name }}</title>
-</head>
-<body>
-    <h1>Welcome to {{ app_name }} 👋</h1>
-    <p>Nama: {{ student_name }}</p>
-    <p>Kelas: {{ student_class }}</p>
-</body>
-</html>
+{% extends 'base.html' %}
+
+{% block title %}Shop At Sin{% endblock %}
+
+{% block content %}
+
+<!-- Top bar: title + Add Item -->
+<div style="
+  max-width:1100px; margin:0 auto 14px; padding:0 2px;
+  display:flex; align-items:center; justify-content:space-between;
+">
+  <h1 style="margin:0; font-size:1.8rem; font-weight:700; color:#f2769b;">
+    🛍️ Our Products
+  </h1>
+
+  <a href="{% url 'main:create_item' %}" style="
+    text-decoration:none; display:inline-flex; align-items:center; gap:8px;
+    padding:10px 16px; border-radius:22px; font-weight:700;
+    color:#fff; background:#f2769b;
+    box-shadow:0 6px 16px rgba(0,0,0,.15);
+  ">
+    <span style="font-size:1.1rem;">＋</span> Add Item
+  </a>
+</div>
+
+<!-- Info panel + list -->
+<div style="
+  max-width:1100px; margin:0 auto; padding:18px 22px;
+  background:#F3E1C8; color:#2d2d2d;
+  border:1px solid rgba(0,0,0,0.1);
+  border-radius:18px;
+  box-shadow:0 6px 20px rgba(0,0,0,.1);
+">
+
+  <!-- Biodata ringkas -->
+  <div style="margin-bottom:14px;">
+    <div style="margin:0 0 6px;">Nama: <b>{{ student_name }}</b></div>
+    <div style="margin:0;">Kelas: <b>{{ student_class }}</b></div>
+  </div>
+
+  <hr style="border:none; border-top:1px solid rgba(0,0,0,0.15); margin:8px 0 16px;">
+
+  {% if not items %}
+    <p style="margin:0; opacity:.9;"> Belum ada data produk pada ShopAtSin.</p>
+  {% else %}
+
+    {% for item in items %}
+      <article style="
+        margin:0 0 18px 0;
+        display:flex; 
+        align-items:center;        /* foto & teks rata tengah */
+        justify-content:space-between;
+        gap:20px;
+      ">
+        <!-- Kiri: teks -->
+        <div style="flex:1;">
+          <!-- Judul -->
+          <h2 style="margin:0 0 8px;">
+            <a href="{% url 'main:show_item' item.id %}" style="
+              color:#8b4ac2; text-decoration:underline; text-underline-offset:3px;
+              font-weight:700;
+            ">{{ item.name }}</a>
+          </h2>
+
+          <!-- Meta -->
+          <p style="margin:0 0 10px; font-size:.97rem;">
+            <b>{{ item.category }}</b>
+            {% if item.is_featured %} | <b>Featured</b>{% endif %}
+            | Rp{{ item.price }}
+            | <i style="opacity:.8;">Added: {{ item.date_added|date:"d M Y" }}</i>
+          </p>
+
+          <!-- Deskripsi singkat -->
+          <p style="margin:0 0 10px; color:#333;">
+            {{ item.description|truncatewords:20 }}...
+          </p>
+
+          <!-- Tombol kecil -->
+          <a href="{% url 'main:show_item' item.id %}" style="text-decoration:none;">
+            <button style="
+              padding:6px 10px; font-size:.85rem; border-radius:6px;
+              border:1px solid rgba(0,0,0,0.3);
+              background:#f2769b; color:#ffd6e0; cursor:pointer;
+            ">
+              View Detail
+            </button>
+          </a>
+        </div>
+
+        <!-- Kanan: thumbnail -->
+        {% if item.thumbnail %}
+          <div style="flex-shrink:0;">
+            <img src="{{ item.thumbnail }}" alt="thumbnail" style="
+              width:180px; 
+              height:auto; 
+              object-fit:contain;   /* biar utuh */
+              background:#fff; 
+              border-radius:8px;
+              border:1px solid rgba(0,0,0,0.15);
+            ">
+          </div>
+        {% endif %}
+      </article>
+
+      {% if not forloop.last %}
+        <hr style="border:none; border-top:1px solid rgba(0,0,0,0.15); margin:16px 0;">
+      {% endif %}
+    {% endfor %}
+
+  {% endif %}
+</div>
+
+{% endblock content %}

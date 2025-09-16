@@ -1,0 +1,22 @@
+
+<h1>{{ item.name }}</h1>
+
+<p><b>Category:</b> {{ item.category }}</p>
+<p><b>Brand:</b> {{ item.brand|default:"-" }}</p>
+<p><b>Price:</b> Rp{{ item.price }}</p>
+<p><b>Stock:</b> {{ item.stock }}</p>
+<p><b>Rating:</b> {{ item.rating }}</p>
+<p><b>Added on:</b> {{ item.date_added|date:"d M Y" }}</p>
+
+{% if item.is_featured %}
+<p><b>Featured Item</b></p>
+{% endif %}
+
+{% if item.thumbnail %}
+<img src="{{ item.thumbnail }}" alt="thumbnail" width="300" height="200">
+<br />
+{% endif %}
+
+<p>{{ item.description }}</p>
+
+<p><a href="{% url 'main:show_main' %}"><button>Back to List</button></a></p>
