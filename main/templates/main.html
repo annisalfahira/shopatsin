@@ -4,7 +4,7 @@
 
 {% block content %}
 
-<!-- Top bar: title + Add Item -->
+<!-- Top bar: title + Add Item + Filter -->
 <div style="
   max-width:1100px; margin:0 auto 14px; padding:0 2px;
   display:flex; align-items:center; justify-content:space-between;
@@ -13,14 +13,33 @@
     🛍️ Our Products
   </h1>
 
-  <a href="{% url 'main:create_item' %}" style="
-    text-decoration:none; display:inline-flex; align-items:center; gap:8px;
-    padding:10px 16px; border-radius:22px; font-weight:700;
-    color:#fff; background:#f2769b;
-    box-shadow:0 6px 16px rgba(0,0,0,.15);
-  ">
-    <span style="font-size:1.1rem;">＋</span> Add Item
-  </a>
+  <!-- Kanan: Add Item + Filter -->
+  <div style="display:flex; align-items:center; gap:10px;">
+    <a href="{% url 'main:create_item' %}" style="
+      text-decoration:none; display:inline-flex; align-items:center; gap:8px;
+      padding:10px 16px; border-radius:22px; font-weight:700;
+      color:#fff; background:#f2769b;
+      box-shadow:0 6px 16px rgba(0,0,0,.15);
+    ">
+      <span style="font-size:1.1rem;">＋</span> Add Item
+    </a>
+
+    <!-- Tambahkan kode filter -->
+    <a href="?filter=all" style="text-decoration:none;">
+      <button type="button" style="
+        padding:8px 14px; border-radius:20px; border:none;
+        background:#fff; color:#f2769b; font-weight:600;
+        box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer;
+      ">All Items</button>
+    </a>
+    <a href="?filter=my" style="text-decoration:none;">
+      <button type="button" style="
+        padding:8px 14px; border-radius:20px; border:none;
+        background:#fff; color:#f2769b; font-weight:600;
+        box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer;
+      ">My Items</button>
+    </a>
+  </div>
 </div>
 
 <!-- Info panel + list -->

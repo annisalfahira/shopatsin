@@ -144,9 +144,7 @@ Tidak ada, all good!!
 <details>
 <summary> <b> Tugas 3: Implementasi Form dan Data Delivery pada Django </b> </summary>
 
-## **Implementasi Checklist**
-
-> ## **Jelaskan mengapa kita memerlukan data delivery dalam pengimplementasian sebuah platform?**
+> ### **Jelaskan mengapa kita memerlukan data delivery dalam pengimplementasian sebuah platform?**
 
 Data delivery” = cara data diambil/dikirim antar komponen (frontend ↔ backend ↔ layanan lain) secara terstruktur, aman, efisien, dan konsisten. Tanpa desain data delivery yang jelas, platform bakal cepat berantakan. Alasan utamanya:
 
@@ -158,7 +156,7 @@ Data delivery” = cara data diambil/dikirim antar komponen (frontend ↔ backen
 * Observabilitas: payload seragam memudahkan logging, tracing, dan analitik.
 * Contoh konkret di platform Django: endpoint REST (JSON) untuk CRUD, Webhook/Queue untuk event, dan mekanisme cache untuk response read-heavy.
 
-> ## **Menurutmu, mana yang lebih baik antara XML dan JSON? Mengapa JSON lebih populer dibandingkan XML?**
+> ### **Menurutmu, mana yang lebih baik antara XML dan JSON? Mengapa JSON lebih populer dibandingkan XML?**
 
 tergantung use case, tapi JSON lebih populer di web modern.
 
@@ -176,14 +174,14 @@ tergantung use case, tapi JSON lebih populer di web modern.
 * App web/mobile modern → JSON (ringan, cepat, tooling melimpah).
 * Integrasi enterprise legacy / dokumen kompleks / perlu XSD → XML masih masuk akal.
 
-> ## **Fungsi `is_valid()` pada Django Form**
+> ### **Fungsi `is_valid()` pada Django Form**
 `form.is_valid()` menjalankan validasi penuh form:
 * Memicu `full_clean()` → mem-parse `request.POST/FILES`, menjalankan validasi built-in, custom clean_<field>(), dan clean() level form.
 * Mengisi `form.cleaned_data` (data yang sudah dibersihkan/ditipkan tipe).
 * Mengisi `form.errors` jika ada error.
 * Return `True/False`: hanya gunakan `cleaned_data/form.save()` (ModelForm) setelah `is_valid()` bernilai `True`.
 
-> ## **Mengapa kita membutuhkan `csrf_token` saat membuat form di Django? Apa yang dapat terjadi jika kita tidak menambahkan `csrf_token` pada form Django? Bagaimana hal tersebut dapat dimanfaatkan oleh penyerang?**
+> ### **Mengapa kita membutuhkan `csrf_token` saat membuat form di Django? Apa yang dapat terjadi jika kita tidak menambahkan `csrf_token` pada form Django? Bagaimana hal tersebut dapat dimanfaatkan oleh penyerang?**
 CSRF (Cross-Site Request Forgery) = serangan di mana attacker “menyuruh” browser korban mengirimkan POST/PUT/DELETE ke situs menggunakan cookie sesi korban tanpa sepengetahuan korban (contoh:  auto-submit form tersembunyi dari domain jahat).
 
 Django memakai CSRF token (random per user/session) yang:
@@ -203,10 +201,10 @@ CSRF_TRUSTED_ORIGINS = [
     "https://annisa-muthia-shopatsin.pbp.cs.ui.ac.id",
 ]
 ```
-> ## **Apakah ada feedback untuk asdos di tutorial 2 yang sudah kalian kerjakan?**
+> ### **Apakah ada feedback untuk asdos di tutorial 2 yang sudah kalian kerjakan?**
 Nope, all good!
 
-> ## **Jelaskan bagaimana cara kamu mengimplementasikan checklist di atas secara step-by-step (bukan hanya sekadar mengikuti tutorial)**
+> ### **Jelaskan bagaimana cara kamu mengimplementasikan checklist di atas secara step-by-step (bukan hanya sekadar mengikuti tutorial)**
 Untuk mendapatkan data baru yang ingin ditampilkan, maka dapat dibuat `form` untuk menerima input.
 
 1. Pertama, buat berkas baru bernama `forms.py` pada direktori `main` dan tambahkan kode berikut ini.
@@ -363,4 +361,307 @@ Berikut adalah tangkapan layar hasil akses URL melalui Postman untuk tiap kelima
 
 
 
+</details>
+
+<details>
+<summary> <b> Tugas 4: Implementasi Autentikasi, Session, dan Cookies pada Django </b> </summary>
+
+## **Jawaban Tugas 4**
+
+> ### Apa itu Django AuthenticationForm? Kelebihan dan Kekurangannya
+
+Django AuthenticationForm adalah form bawaan Django yang digunakan untuk menangani proses login user dengan field username dan password. Form ini secara otomatis memvalidasi apakah kombinasi username dan password sesuai dengan data di database menggunakan sistem autentikasi Django. 
+
+Kelebihannya adalah praktis dan aman karena sudah mengintegrasikan logika autentikasi bawaan, sehingga developer tidak perlu membuat logika verifikasi sendiri. Namun, kekurangannya adalah terbatas dalam kustomisasi, jika ingin menambahkan field tambahan seperti “remember me” atau integrasi OTP, biasanya developer perlu menulis form kustom.
+
+> ### Perbedaan Autentikasi dan Otorisasi, serta Implementasi di Django
+Autentikasi adalah proses untuk memastikan identitas pengguna—misalnya dengan username dan password—sedangkan otorisasi adalah proses untuk menentukan apa yang boleh dilakukan pengguna tersebut setelah terautentikasi, seperti apakah bisa mengakses halaman admin atau hanya halaman biasa.  
+
+Django memisahkan keduanya dengan jelas. Autentikasi ditangani lewat `authenticate()` dan `login()`, sedangkan otorisasi diatur dengan sistem permission, group, serta flag seperti `is_staff` dan `is_superuser`. Django juga menyediakan dekorator seperti `@login_required` dan `@permission_required` untuk membatasi akses ke view tertentu sesuai hak pengguna.
+
+> ### Kelebihan dan Kekurangan Session dan Cookies
+Session menyimpan data di server, sementara browser hanya menyimpan ID sesi di cookie. Kelebihannya adalah data sensitif lebih aman karena tidak dikirim ke browser, serta mampu menyimpan struktur data kompleks. Kekurangannya adalah membebani server karena semua state disimpan di sisi server.
+
+Cookies menyimpan data langsung di browser. Kelebihannya adalah ringan, mudah digunakan, dan cocok untuk preferensi user yang tidak sensitif. Namun, kekurangannya adalah rentan terhadap manipulasi atau pencurian data jika tidak diamankan dengan baik, serta terbatas ukurannya (umumnya 4KB per cookie).
+
+> ### Apakah Cookies Aman Secara Default? Bagaimana Django Menangani?
+Cookies tidak selalu aman secara default karena bisa dicuri melalui serangan seperti XSS atau dikirim tanpa enkripsi pada koneksi HTTP. Karena itu, ada risiko potensial jika developer tidak berhati-hati.  
+
+Django membantu mengurangi risiko ini dengan beberapa pengaturan:  
+- `SESSION_COOKIE_SECURE = True` untuk memastikan cookie hanya dikirim lewat HTTPS.  
+- `SESSION_COOKIE_HTTPONLY = True` agar cookie tidak bisa diakses lewat JavaScript.  
+- `CSRF_COOKIE_SECURE` dan `CSRF_COOKIE_HTTPONLY` untuk melindungi CSRF token.  
+- Middleware CSRF yang mewajibkan token unik di setiap form POST.  
+Dengan kombinasi ini, Django memberi dasar keamanan yang cukup kuat dalam penggunaan cookies.
+
+### Implementasi Step-by-Step
+
+## Implementasi Autentikasi, Session, dan Cookies
+
+### Membuat Fungsi dan Form Registrasi
+Pada tugas kali ini, kita ingin membuat halaman utama kita hanya bisa diakses oleh pengguna yang sudah mempunyai akun saja. Untuk mendaftarkan pengguna, diperlukan form registrasi.
+
+Pada `views.py` folder main, saya menambahkan fungsi `register` dan mengimport beberapa modul berikut ini.
+```python
+from django.shortcuts import redirect
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib import messages  
+
+def register(request):
+    form = UserCreationForm()
+    if request.method == "POST":
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your account has been successfully created!')
+            return redirect('main:login')
+    context = {'form': form}
+    return render(request, 'register.html', context)
+```
+Setelah itu, saya membuat halaman registrasi `register.html` pada `main/templates` dengan kode berikut.
+```html
+{% extends 'base.html' %}
+
+{% block meta %}
+<title>Register</title>
+{% endblock meta %}
+
+{% block content %}
+
+<div>
+  <h1>Register</h1>
+
+  <form method="POST">
+    {% csrf_token %}
+    <table>
+      {{ form.as_table }}
+      <tr>
+        <td></td>
+        <td><input type="submit" name="submit" value="Daftar" /></td>
+      </tr>
+    </table>
+  </form>
+
+  {% if messages %}
+  <ul>
+    {% for message in messages %}
+    <li>{{ message }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</div>
+
+{% endblock content %}
+```
+Terakhir, menambahkan *url path* pada `urls.py`.
+
+```python
+from main.views import register
+
+urlpatterns = [
+    ...
+    path('register/', register, name='register'),
+    ...
+]
+```
+
+### Membuat Fungsi Login dan Merestriksi Akses Halaman Main
+Setelah membuat form registrasi, saya membuat fitur login untuk mengakses pengguna yang terdaftar.
+
+Pada `views.py` folder main, saya menambahkan fungsi `login_user` dan mengimport beberapa modul berikut ini.
+```python
+from django.contrib.auth import authenticate, login
+
+def login_user(request):
+   if request.method == 'POST':
+      form = AuthenticationForm(data=request.POST)
+
+      if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            return redirect('main:show_main')
+
+   else:
+      form = AuthenticationForm(request)
+   context = {'form': form}
+   return render(request, 'login.html', context)
+```
+Setelah itu, saya membuat halaman login `login.html` pada `main/templates` dengan kode berikut.
+
+```html
+{% extends 'base.html' %}
+
+{% block meta %}
+<title>Login</title>
+{% endblock meta %}
+
+{% block content %}
+<div class="login">
+  <h1>Login</h1>
+
+  <form method="POST" action="">
+    {% csrf_token %}
+    <table>
+      {{ form.as_table }}
+      <tr>
+        <td></td>
+        <td><input class="btn login_btn" type="submit" value="Login" /></td>
+      </tr>
+    </table>
+  </form>
+
+  {% if messages %}
+  <ul>
+    {% for message in messages %}
+    <li>{{ message }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %} Don't have an account yet?
+  <a href="{% url 'main:register' %}">Register Now</a>
+</div>
+
+{% endblock content %}
+</div>
+
+{% endblock content %}
+```
+Terakhir, menambahkan *url path* pada `urls.py`.
+```python
+from main.views import login_user
+
+urlpatterns = [
+    ...
+    path('login/', login_user, name='login'),
+    ...
+]
+```
+
+Untuk membatasi akses halaman main, pada `views.py` tambahkan modul dan decorator berikut ini.
+```python
+from django.contrib.auth.decorators import login_required
+
+@login_required(login_url='/login') 
+def show_main(request):
+    ....
+
+@login_required(login_url='/login')
+def create_item(request):
+    ....
+```
+
+### Membuat Fungsi Logout
+Sekrang pengguna sudah berhasil melakukan login. Lalu, bagaimana dengan fitur logout?
+
+Pada `views.py` folder main, saya menambahkan fungsi `logout_user` dan mengimport beberapa modul berikut ini.
+```python
+from django.contrib.auth import logout
+
+def logout_user(request):
+    logout(request)
+    response = HttpResponseRedirect(reverse('main:login'))
+    response.delete_cookie('last_login')
+    return response
+```
+Setelah itu, saya membuat tombol `"logout"` di `base.html` pada `templates` dengan kode berikut.
+```html
+    ...
+     <a href="{% url 'main:logout' %}" >
+            <button>
+                Logout
+            </button>
+        </a>
+    ...
+```
+Terakhir, menambahkan *url path* pada `urls.py`.
+```python
+from main.views import logout_user
+
+urlpatterns = [
+    ...
+    path('logout/', logout_user, name='logout'),
+    ...
+]
+```
+
+### Menghubungkan `Item` dengan `User`
+Agar pengguna yang terotorisasi dapat melihat produk-produknya sendiri, kita perlu menghubungkan setiap objek `Item` untuk setiap `User`.
+Saya menambahkan kode berikut pada `models.py`,
+```python
+from django.contrib.auth.models import User
+
+class Item(models.Model):
+    ...
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+```
+
+Saya juga mengubah sedikit kode pada fungsi `create_item` di `views.py` menjadi seperti berikut.
+```python
+@login_required(login_url='/login')
+def create_item(request):
+    form = ItemsForms(request.POST or None)
+
+    if form.is_valid() and request.method == "POST":
+        item = form.save(commit=False)
+        item.user = request.user
+        item.save()
+        return redirect("main:show_main")
+
+    context = {"form": form}
+    return render(request, "create_item.html", context)
+```
+Terakhir, agar nama penggunanya berubah tambahkan kode berikut pada fungsi `show_main`.
+```python
+def show_main(request):
+    filter_type = request.GET.get('filter', 'all')
+
+    if filter_type == 'all':
+        items = ShopAtSinItem.objects.all()
+    else:
+        # contoh: ?filter=my  -> hanya item milik user login
+        items = ShopAtSinItem.objects.filter(user=request.user)
+
+    context = {
+        "app_name": "ShopAtSin",
+        "student_name": "Annisa Muthia Alfahira",
+        "student_class": "F",
+        "items": items,
+        "last_login": request.COOKIES.get('last_login', 'Never'),
+        "filter_type": filter_type,  # optional: bisa dipakai buat highlight tombol filter
+    }
+    return render(request, "main.html", context)
+```
+Simpan perubahan tersebut dan jangan lupa untuk melakukan `python manage.py makemigrations` dan `python manage.py migrate`.
+
+### Menerapkan Cookies
+Untuk menampilkan data *last login* pengguna, kita bisa menggunakan cookies.
+
+Saya menambahkan modul berikut pada `views.py` direktori `main`. 
+```python
+import datetime
+from django.http import HttpResponseRedirect
+from django.urls import reverse
+```
+
+Tambahkan informasi cookie *last login* pada fungsi `show_main`.
+```python
+context = {
+        ...
+        "last_login": request.COOKIES.get('last_login', 'Never'),  
+        ...
+    }
+```
+Ubahlah kode `logout_user` menjadi seperti berikut.
+```python
+def logout_user(request):
+    logout(request)
+    response = HttpResponseRedirect(reverse('main:login'))
+    response.delete_cookie('last_login')
+    return response
+```
+Terakhir, tampilkan cookie nya ke dalam `base.html`.
+```html
+...
+<h5>Sesi terakhir login: {{ last_login }}</h5>
+...
+```
 </details>
