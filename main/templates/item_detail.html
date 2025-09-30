@@ -1,29 +1,58 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Product #{{ item.pk }} — ShopAtSin{% endblock %}
 
-<h1>{{ item.name }}</h1>
+{% block content %}
+<div class="max-w-5xl mx-auto">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="bg-warm-grey rounded-xl shadow overflow-hidden">
+      {% if item.thumbnail %}
+        <img src="{{ item.thumbnail }}" alt="{{ item.name }}" class="w-full">
+      {% else %}
+        <div class="aspect-video bg-warm-grey/70 flex items-center justify-center text-maroon-dark">No Image</div>
+      {% endif %}
+    </div>
 
-<p><b>Category:</b> {{ item.category }}</p>
-<p><b>Brand:</b> {{ item.brand|default:"-" }}</p>
-<p><b>Price:</b> Rp{{ item.price }}</p>
-<p><b>Stock:</b> {{ item.stock }}</p>
-<p><b>Rating:</b> {{ item.rating }}</p>
-<p><b>Added on:</b> {{ item.date_added|date:"d M Y" }}</p>
+    <div class="bg-warm-grey rounded-xl shadow p-5">
+      <h1 class="text-2xl font-semibold mb-2">{{ item.name }}</h1>
+      <p class="text-sm text-maroon-dark/70 mb-1">#{{ item.pk }} • {{ item.category }}</p>
+      {% if item.price %}
+        <p class="text-xl font-semibold mb-3">Rp {{ item.price|intcomma }}</p>
+      {% endif %}
+      {% if item.description %}
+        <p class="text-maroon-dark/90 mb-4">{{ item.description }}</p>
+      {% endif %}
 
-{% if item.is_featured %}
-<p><b>Featured Item</b></p>
-{% endif %}
+      <div class="flex flex-wrap items-center gap-2">
+        <a href="{% url 'main:show_main' %}"
+           class="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium border-2 border-warm-grey text-maroon-dark hover:bg-warm-grey">
+          Back
+        </a>
 
-{% if item.thumbnail %}
-<img src="{{ item.thumbnail }}" alt="thumbnail" width="300" height="200">
-<br />
-{% endif %}
+        {% if user.is_authenticated and item.user == user %}
+          <a href="{% url 'main:edit_item' item.pk %}"
+             class="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium border-2 border-maroon text-maroon hover:bg-maroon hover:text-beige">
+            Edit
+          </a>
 
-<p>{{ item.description }}</p>
+          <form action="{% url 'main:delete_item' item.pk %}" method="post" class="inline">
+            {% csrf_token %}
+            <button type="submit"
+               class="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium border-2 border-[#b02a37] text-[#b02a37] hover:bg-[#b02a37] hover:text-white"
+               onclick="return confirm('Hapus produk ini?')">
+              Delete
+            </button>
+          </form>
+        {% endif %}
+      </div>
 
-{% if news.user %}
-    <p>Seller: {{ news.user.username }}</p>
-{% else %}
-    <p>Seller: Anonymous</p>
-{% endif %}
-
-
-<p><a href="{% url 'main:show_main' %}"><button>Back to List</button></a></p>
+      {% if item.created_at or item.updated_at %}
+        <div class="mt-4 text-xs text-maroon-dark/70">
+          {% if item.created_at %}Created: {{ item.created_at|date:"d M Y H:i" }}{% endif %}
+          {% if item.updated_at %} • Updated: {{ item.updated_at|date:"d M Y H:i" }}{% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

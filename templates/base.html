@@ -1,87 +1,170 @@
 {% load static %}
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{% block title %}Shop At Sin{% endblock %}</title>
-    <!-- Font Poppins -->
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}ShopAtSin{% endblock %}</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Your custom CSS (contains CSS variables) -->
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=4">
+
+  <!-- Tailwind CDN + custom colors -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'maroon-dark':'#561C24',
+            'maroon':'#6D2932',
+            'warm-grey':'#C7B7A3',
+            'beige':'#E8D8C4',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Poppins', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  </style>
 </head>
+<body class="bg-beige text-maroon-dark">
 
-<body style="margin:0; font-family:'Quicksand', sans-serif; background:#ffd6e0; color:#2d2d2d;">
+  <!-- NAVBAR -->
+  <nav class="bg-maroon-dark text-beige sticky top-0 z-50 shadow">
+    <div class="container mx-auto px-4">
+      <div class="flex h-16 items-center justify-between">
 
-    <!-- Header -->
-    <header style="
-    background:#F3E1C8;
-    padding:14px 20px;
-    border-bottom:2px solid #F3E1C8;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;   /* kiri dan kanan berjauhan */
-    ">
-    <!-- Kiri: logo + brand -->
-    <div style="display:flex; align-items:center; gap:10px;">
-        <!-- Emoji dengan rounded background -->
-        <span style="
-            font-size:1.4rem;
-            background:#f2769b;
-            color:#f2769b;
-            width:36px; height:36px;
-            border-radius:50%;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            box-shadow:0 2px 6px rgba(0,0,0,0.15);
-        ">
-            🧘🏻‍♀️
-        </span>
-
-        <!-- Brand Name -->
-        <span style="font-weight:700; font-size:1.2rem; color:#f2769b;">
-            Shop At Sin
-        </span>
-    </div>
-
-    <!-- Kanan: tombol logout + info login -->
-    <div style="display:flex; flex-direction:column; align-items:flex-end;">
-        <a href="{% url 'main:logout' %}" style="text-decoration:none; margin-bottom:4px;">
-            <button style="
-                padding:8px 14px;
-                border:none;
-                border-radius:20px;
-                background:#f2769b;
-                color:#fff;
-                font-weight:600;
-                cursor:pointer;
-                box-shadow:0 2px 6px rgba(0,0,0,0.15);
-            ">
-                Logout
-            </button>
+        <!-- Brand -->
+        <a href="{% url 'main:show_main' %}" class="font-semibold text-lg tracking-wide">
+          🧘🏻‍♀️ ShopAtSin
         </a>
-        <h5 style="margin:0; font-size:0.75rem; font-weight:400; color:#555;">
-            Sesi terakhir login: {{ last_login }}
-        </h5>
+
+        <!-- Desktop links -->
+        <ul class="hidden md:flex items-center gap-6">
+          <li>
+            <a href="{% url 'main:show_main' %}"
+               class="rounded-full px-3 py-2 transition hover:bg-beige hover:text-maroon-dark">
+              Products
+            </a>
+          </li>
+          <li>
+            <a href="{% url 'main:create_item' %}"
+               class="rounded-full px-3 py-2 transition hover:bg-beige hover:text-maroon-dark">
+              Add Product
+            </a>
+          </li>
+        </ul>
+
+        <!-- Desktop user area -->
+        <div class="hidden md:flex items-center gap-3">
+          {% if user.is_authenticated %}
+            <div class="text-right leading-tight">
+              <div class="font-medium">{{ user.username }}</div>
+              {% if user.last_login %}
+                <div class="text-beige/80 text-xs">Last login: {{ user.last_login|date:"d M Y H:i" }}</div>
+              {% endif %}
+            </div>
+            <a href="{% url 'main:logout' %}"
+               class="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium border-2 border-beige text-beige hover:bg-beige hover:text-maroon-dark transition">
+              Logout
+            </a>
+          {% else %}
+            <a href="{% url 'main:login' %}" class="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium bg-beige text-maroon-dark hover:opacity-90">Login</a>
+            <a href="{% url 'main:register' %}" class="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium border-2 border-beige hover:bg-beige hover:text-maroon-dark">Register</a>
+          {% endif %}
+        </div>
+
+        <!-- Mobile hamburger -->
+        <button id="nav-toggle" class="md:hidden w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+      </div>
     </div>
-    </header>
+
+    <!-- Mobile menu -->
+    <div id="nav-mobile" class="md:hidden hidden border-t border-white/20">
+      <div class="px-4 py-3 space-y-3">
+        <ul class="flex flex-col gap-2">
+          <li>
+            <a href="{% url 'main:show_main' %}"
+               class="block rounded-full px-3 py-2 hover:bg-beige hover:text-maroon-dark transition">
+               Products
+            </a>
+          </li>
+          <li>
+            <a href="{% url 'main:create_item' %}"
+               class="block rounded-full px-3 py-2 hover:bg-beige hover:text-maroon-dark transition">
+               Add Product
+            </a>
+          </li>
+        </ul>
+        <hr class="border-white/20">
+        {% if user.is_authenticated %}
+          <div class="text-sm">
+            <div class="font-medium">{{ user.username }}</div>
+            {% if user.last_login %}
+              <div class="text-beige/80">Last login: {{ user.last_login|date:"d M Y H:i" }}</div>
+            {% endif %}
+          </div>
+          <a href="{% url 'main:logout' %}"
+             class="mt-2 block text-center rounded-full px-4 py-2 text-sm font-medium border-2 border-beige text-beige hover:bg-beige hover:text-maroon-dark transition">
+            Logout
+          </a>
+        {% else %}
+          <div class="flex gap-2">
+            <a href="{% url 'main:login' %}" class="flex-1 text-center rounded-full px-4 py-2 text-sm font-medium bg-beige text-maroon-dark">Login</a>
+            <a href="{% url 'main:register' %}" class="flex-1 text-center rounded-full px-4 py-2 text-sm font-medium border-2 border-beige hover:bg-beige hover:text-maroon-dark">Register</a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <!-- FLASH MESSAGES -->
+<div class="container mx-auto px-4">
+  {% if messages %}
+    <div class="mt-4 space-y-2">
+      {% for message in messages %}
+        <div class="rounded-lg px-4 py-3 text-sm
+          {% if 'error' in message.tags or 'danger' in message.tags %}
+            bg-red-100 text-red-800
+          {% else %}
+            bg-green-100 text-green-800
+          {% endif %}
+        ">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
 
 
-    <!-- Main content -->
-    <main style="max-width:1100px; margin:20px auto; padding:0 20px;">
-        {% block content %}{% endblock content %}
-    </main>
+  <!-- MAIN -->
+  <main class="container mx-auto px-4 py-6">
+    {% block content %}{% endblock %}
+  </main>
 
-    <!-- Footer -->
-    <footer style="
-        background:#F3E1C8;
-        text-align:center;
-        padding:12px;
-        font-size:.9rem;
-        color:#2d2d2d;
-        margin-top:40px;
-    ">
-        © {{ now|date:'Y' }} Shop At Sin by Asin
-    </footer>
+  <!-- FOOTER -->
+  <footer class="py-6">
+    <div class="container mx-auto px-4 text-center text-sm text-maroon-dark/80">
+      © {{ now|date:"Y" }} ShopAtSin • Made by Asin
+    </div>
+  </footer>
+
+  <script>
+    (function(){
+      const btn = document.getElementById('nav-toggle');
+      const panel = document.getElementById('nav-mobile');
+      if (btn && panel) btn.addEventListener('click', ()=> panel.classList.toggle('hidden'));
+    })();
+  </script>
 </body>
 </html>

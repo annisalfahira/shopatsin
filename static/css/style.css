@@ -1,0 +1,41 @@
+:root{
+  --maroon-dark:#561C24;
+  --maroon:#6D2932;
+  --warm-grey:#C7B7A3;
+  --beige:#E8D8C4;
+}
+
+/* Form look & focus */
+.form-field{
+  @apply w-full px-4 py-3 rounded-lg border border-[color:var(--warm-grey)] bg-white/90;
+}
+.form-field:focus{
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--maroon) 20%, white);
+  border-color: var(--maroon);
+}
+
+/* Ghost button */
+.btn-ghost{
+  @apply inline-flex items-center justify-center rounded-lg border px-4 py-2 text-sm transition;
+  border-color: color-mix(in oklab, var(--maroon) 15%, white);
+  color: var(--maroon);
+}
+.btn-ghost:hover{ background: color-mix(in oklab, var(--beige) 60%, white); }
+
+/* Solid button */
+.btn-primary{
+  @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium text-white transition;
+  background: var(--maroon);
+}
+.btn-primary:hover{ background: var(--maroon-dark); }
+
+/* Card */
+.card{
+  @apply bg-white rounded-2xl border overflow-hidden shadow-soft;
+  border-color: color-mix(in oklab, var(--warm-grey) 50%, white);
+}
+
+/* Simple fade hover */
+.hover-lift{ transition: transform .15s ease, box-shadow .15s ease; }
+.hover-lift:hover{ transform: translateY(-2px); box-shadow: 0 18px 30px -10px rgba(0,0,0,.18); }

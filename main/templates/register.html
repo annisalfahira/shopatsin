@@ -1,32 +1,54 @@
 {% extends 'base.html' %}
-
-{% block meta %}
-<title>Register</title>
-{% endblock meta %}
+{% block title %}Register — ShopAtSin{% endblock %}
 
 {% block content %}
+<div class="max-w-md mx-auto">
+  <h1 class="text-2xl font-semibold mb-4">Create your account ✨</h1>
 
-<div>
-  <h1>Register</h1>
+  <div class="bg-warm-grey rounded-xl shadow p-6">
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
 
-  <form method="POST">
-    {% csrf_token %}
-    <table>
-      {{ form.as_table }}
-      <tr>
-        <td></td>
-        <td><input type="submit" name="submit" value="Daftar" /></td>
-      </tr>
-    </table>
-  </form>
+      {% if form.non_field_errors %}
+        <div class="rounded-lg p-3 bg-red-100 text-red-800 text-sm">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
 
-  {% if messages %}
-  <ul>
-    {% for message in messages %}
-    <li>{{ message }}</li>
-    {% endfor %}
-  </ul>
-  {% endif %}
+      {% for field in form %}
+        <div>
+          <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-1">
+            {{ field.label }}{% if field.field.required %} <span class="text-red-600">*</span>{% endif %}
+          </label>
+          {{ field }}
+          {% if field.help_text %}
+            <p class="text-xs text-maroon-dark/70 mt-1">{{ field.help_text|safe }}</p>
+          {% endif %}
+          {% for err in field.errors %}
+            <p class="text-xs text-red-700 mt-1">{{ err }}</p>
+          {% endfor %}
+        </div>
+      {% endfor %}
+
+      <button type="submit" class="w-full inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium bg-maroon text-beige hover:opacity-90">Register</button>
+    </form>
+
+    <p class="text-sm text-maroon-dark/80 mt-4">
+      Udah punya akun?
+      <a href="{% url 'main:login' %}" class="font-medium text-maroon underline">Login</a>
+    </p>
+  </div>
 </div>
 
-{% endblock content %}
+<script>
+  (function(){
+    const base = "w-full rounded-lg border border-maroon-dark/20 focus:outline-none focus:ring-2 focus:ring-maroon focus:border-maroon px-3 py-2 text-sm bg-white placeholder:opacity-50";
+    document.querySelectorAll('input:not([type=checkbox]):not([type=radio]), select, textarea').forEach(el=>{
+      el.className = (el.className || "") + " " + base;
+    });
+    document.querySelectorAll('input[type=checkbox], input[type=radio]').forEach(el=>{
+      el.className = (el.className || "") + " h-4 w-4 text-maroon border-maroon-dark/30 focus:ring-maroon";
+    });
+  })();
+</script>
+{% endblock %}

@@ -2,13 +2,14 @@ import datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from .forms import ItemsForms
 from .models import ShopAtSinItem
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
 from django.core import serializers
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
+from django.views.decorators.http import require_POST
 
 
 @login_required(login_url='/login')
@@ -113,3 +114,30 @@ def logout_user(request):
     response = HttpResponseRedirect(reverse('main:login'))
     response.delete_cookie('last_login')
     return response
+
+@login_required(login_url='/login')
+def edit_item(request, id):
+    item = get_object_or_404(ShopAtSinItem, pk=id)
+    # hanya pemilik yang boleh edit
+    if item.user != request.user:
+        return HttpResponseForbidden("You are not allowed to edit this item.")
+
+    form = ItemsForms(request.POST or None, instance=item)
+    if form.is_valid() and request.method == 'POST':
+        form.save()
+        messages.success(request, "Item updated.")
+        return redirect('main:show_item', id=item.pk)
+
+    return render(request, 'edit_item.html', {'form': form, 'item': item})
+
+@login_required(login_url='/login')
+@require_POST
+def delete_item(request, id):
+    item = get_object_or_404(ShopAtSinItem, pk=id)
+    # hanya pemilik yang boleh delete
+    if item.user != request.user:
+        return HttpResponseForbidden("You are not allowed to delete this item.")
+
+    item.delete()
+    messages.success(request, "Item deleted.")
+    return HttpResponseRedirect(reverse('main:show_main'))

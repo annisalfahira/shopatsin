@@ -665,3 +665,175 @@ Terakhir, tampilkan cookie nya ke dalam `base.html`.
 ...
 ```
 </details>
+
+<details>
+<summary> <b> Tugas 5: Desain Web menggunakan HTML, CSS dan Framework CSS </b> </summary>
+
+## **Jawaban Tugas 5**
+
+> ### Jika terdapat beberapa CSS selector untuk suatu elemen HTML, jelaskan urutan prioritas pengambilan CSS selector tersebut!
+Urutan (tinggi → rendah):
+
+1. **Inline style** (mis. `style="..."`)
+2. **ID selector** (`#id`)
+3. **Class / attribute / pseudo-class** (`.class`, `[attr]`, `:hover`, `:focus`)
+4. **Type/element** (`div`, `p`, `h1`)
+5. **Universal** (`*`)
+
+Jika specificit-ynya **sama**, maka **selector yang muncul paling akhir** di sumber (source order) yang menang. `!important` akan meng-override aturan normal—gunakan hanya bila sangat perlu karena menyulitkan maintenance.
+
+> ### Mengapa responsive design menjadi konsep yang penting dalam pengembangan aplikasi web? Berikan contoh aplikasi yang sudah dan belum menerapkan responsive design, serta jelaskan mengapa!
+
+* Pengguna mengakses dari beragam device/ukuran layar → **keterbacaan**, **aksesibilitas**, **konversi** tetap optimal.
+* Meminimalkan zoom/scroll horizontal, waktu muat yang efisien, dan konsistensi UI.
+
+**Contoh sudah responsif**: aplikasi e-commerce/mobile-first modern (mis. marketplace besar) yang grid-nya berubah dari 1 kolom (mobile) → 2–4 kolom (desktop), navbar berubah jadi hamburger di mobile.
+**Contoh belum responsif**: situs lama **fixed-width** 1024px yang di mobile harus zoom/geser ke samping—UX buruk dan bounce rate tinggi.
+
+> ### Jelaskan perbedaan antara margin, border, dan padding, serta cara untuk mengimplementasikan ketiga hal tersebut!
+
+* **Margin**: ruang **di luar** border; memisahkan elemen dari elemen lain.
+* **Border**: garis **pembatas** antara margin dan padding.
+* **Padding**: ruang **di dalam** border; jarak konten ke border.
+
+Contoh CSS:
+
+```css
+.card {
+  margin: 16px;              /* jarak antar elemen */
+  border: 1px solid #ddd;    /* bingkai */
+  padding: 12px;             /* ruang dalam */
+}
+```
+
+Di Tailwind setara dengan: `m-4 border border-gray-300 p-3`.
+
+> ### Jelaskan konsep flex box dan grid layout beserta kegunaannya!
+
+* **Flexbox** = layout **1 dimensi** (baris **atau** kolom). Cocok untuk **alignment** item, toolbar, grup tombol, center-ing vertikal/horizontal.
+
+  * Tailwind: `flex`, `items-center`, `justify-between`, `gap-2`, `flex-col`/`flex-row`.
+* **Grid** = layout **2 dimensi** (baris **dan** kolom). Cocok untuk **galeri**, **kartu responsif**, dashboard.
+
+  * Tailwind: `grid`, `grid-cols-1 md:grid-cols-2 lg:grid-cols-3`, `gap-6`.
+
+Contoh:
+
+```html
+<!-- Flex untuk tombol aksi -->
+<div class="flex items-center justify-end gap-2">
+  <button class="btn-ghost">Cancel</button>
+  <button class="btn-primary">Save</button>
+</div>
+
+<!-- Grid untuk kartu produk -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+  <!-- ...cards -->
+</div>
+```
+
+
+
+## Implementasi Step-by-Step
+
+> ### Setup Tailwind dan Styling Global
+
+Pertama aku aktifin Tailwind lewat CDN di `base.html`. Aku extend konfigurasi warnanya biar bisa langsung pake warna maroon, warm-grey, dan beige di template.
+
+Selain itu, aku bikin satu file `global.css` di static. File ini isinya utility style kayak `.btn-primary`, `.btn-ghost`, `.card`, sama `.form-field`. Tujuannya biar tombol, card, dan input punya gaya yang konsisten di semua halaman tanpa harus nulis ulang class panjang-panjang tiap kali.
+
+
+
+> ### Navbar Responsif
+
+Navbar aku taruh langsung di `main.html`. Di tampilan desktop, navbar nunjukin link ke daftar produk dan tambah produk, plus tombol login/register atau logout kalau user udah masuk. Di mobile, link ini aku sembunyiin dan ganti pake hamburger button. Ada sedikit script JS di bawah yang tugasnya cuma toggle class `hidden`, jadi menunya bisa buka tutup pas di-klik.
+
+Jadinya satu navbar bisa jalan di desktop maupun hp tanpa harus bikin dua versi terpisah.
+
+> ### Routing
+
+Supaya produk bisa diedit dan dihapus, aku tambahin route baru di `urls.py`.
+
+* `/item/<id>/edit/` untuk edit produk
+* `/item/<id>/delete/` untuk delete produk
+
+Route ini langsung diarahkan ke function view yang aku bikin di `views.py`.
+
+> ### Function Edit Product
+
+Untuk edit, aku bikin function `edit_item` di `views.py`. Alurnya gini:
+
+1. Pertama aku cari produk berdasarkan id pake `get_object_or_404`, biar kalau id salah langsung 404.
+2. Aku binding produk itu ke `ItemForm` dengan `instance=item`. Jadi field form otomatis keisi dengan data lama produk.
+3. Kalau form disubmit (`POST`) dan valid, aku tinggal panggil `form.save()`. Data lama bakal ke-update ke database.
+4. Kalau belum valid, aku balikin form yang sama tapi ada error message.
+
+Cuplikannya:
+
+```python
+@login_required
+def edit_item(request, id):
+    item = get_object_or_404(ShopAtSinItem, pk=id)
+    form = ItemForm(request.POST or None, instance=item)
+    if form.is_valid() and request.method == "POST":
+        form.save()
+        return redirect('main:show_item', id=id)
+    return render(request, "edit_item.html", {"form": form})
+```
+
+Dengan pola ini, halaman edit punya form yang sama kayak create, tapi fieldnya udah otomatis keisi data lama. User tinggal ganti aja yang mau diubah.
+
+> ### Function Delete Product
+
+Delete aku bikin lebih sederhana. Function `delete_item` cuma ambil produk sesuai id, terus langsung dihapus. Tapi supaya aman, aku kasih decorator `@require_POST`. Jadi produk ga bisa kehapus cuma gara-gara klik link GET, harus lewat form dengan `POST` request.
+
+```python
+@login_required
+@require_POST
+def delete_item(request, id):
+    item = get_object_or_404(ShopAtSinItem, pk=id)
+    item.delete()
+    return redirect('main:show_main')
+```
+
+Dengan cara ini, user bisa hapus produk tapi tetap lewat flow aman: tombol delete → form POST → CSRF token → eksekusi delete.
+
+> ### Halaman Daftar Produk
+
+Di `main.html`, aku tambahin kondisi buat nampilin dua skenario:
+
+* Kalau belum ada produk sama sekali, muncul **empty state**. Ada gambar ilustrasi, teks “Belum ada produk”, dan tombol “Tambah Product”.
+* Kalau produk udah ada, aku tampilin dalam bentuk **card grid** yang responsif. Tiap card isinya gambar produk (kalau ada), nama, deskripsi singkat, dan tombol-tombol aksi: Detail, Edit, Delete.
+
+Tombol delete aku bungkus di form dengan `{% csrf_token %}` biar sesuai sama view `@require_POST`.
+
+> ### Halaman Add/Edit Form
+
+Untuk form, aku pisahin jadi `create_item.html` dan `edit_item.html`, tapi keduanya isinya mirip. Bedanya cuma judul dan teks tombol. Field form aku render langsung dari `ItemForm`. Kalau mode edit, field udah otomatis terisi data lama. Kalau create, form kosong.
+
+> ### Halaman Detail Produk
+
+Di `item_detail.html`, aku tampilin detail lengkap produk: gambar besar, nama, deskripsi, dan harga. Di bawahnya aku kasih tombol Edit sama Delete juga, jadi user bisa langsung aksi dari detail tanpa harus balik ke list.
+``` html
+<div class="bg-warm-grey rounded-xl shadow p-5">
+      <h1 class="text-2xl font-semibold mb-2">{{ item.name }}</h1>
+      <p class="text-sm text-maroon-dark/70 mb-1">#{{ item.pk }} • {{ item.category }}</p>
+      {% if item.price %}
+        <p class="text-xl font-semibold mb-3">Rp {{ item.price|intcomma }}</p>
+      {% endif %}
+      {% if item.description %}
+        <p class="text-maroon-dark/90 mb-4">{{ item.description }}</p>
+      {% endif %}
+```
+
+> ### Login & Register
+
+Halaman login (`login.html`) dan register (`register.html`) aku desain ulang biar clean: card putih dengan border tipis, field input rounded, dan tombol maroon solid. Error message aku kasih styling khusus biar lebih jelas terbaca.
+
+> ### Keamanan & Feedback
+
+Semua form aku kasih `{% csrf_token %}` biar aman dari CSRF. Aksi create/edit/delete juga aku kasih decorator `@login_required` supaya cuma user login yang bisa ngubah data. Untuk delete, aku pakai `@require_POST` biar gak bisa diakses sembarangan lewat link.
+
+Selain itu, aku pake Django messages framework buat kasih feedback. Jadi kalau produk berhasil ditambah, diupdate, atau dihapus, muncul notifikasi kecil di halaman.
+
+</details>

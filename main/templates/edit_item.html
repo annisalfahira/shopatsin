@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
-{% block title %}Add Product — ShopAtSin{% endblock %}
+{% block title %}Edit Product — ShopAtSin{% endblock %}
 
 {% block content %}
 <div class="max-w-2xl mx-auto">
-  <h1 class="text-2xl font-semibold mb-4">➕ Add New Product</h1>
+  <h1 class="text-2xl font-semibold mb-4">✏️ Edit Product #{{ item.pk }}</h1>
 
   <div class="bg-warm-grey rounded-xl shadow p-6">
     <form method="post" enctype="multipart/form-data" class="space-y-4">
@@ -31,8 +31,16 @@
       {% endfor %}
 
       <div class="flex items-center gap-3 pt-2">
-        <button type="submit" class="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium bg-maroon text-beige hover:opacity-90">Save</button>
-        <a href="{% url 'main:show_main' %}" class="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium border-2 border-warm-grey text-maroon-dark hover:bg-warm-grey">Cancel</a>
+        <button type="submit"
+                class="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium bg-maroon text-beige hover:opacity-90">
+          Update
+        </button>
+
+        <!-- FIX: pakai 'item' (bukan 'object') dan keyword arg 'id' -->
+        <a href="{% url 'main:show_item' id=item.pk %}"
+           class="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium border-2 border-warm-grey text-maroon-dark hover:bg-warm-grey">
+          Back
+        </a>
       </div>
     </form>
   </div>

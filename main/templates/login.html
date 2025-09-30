@@ -1,32 +1,45 @@
 {% extends 'base.html' %}
-
-{% block meta %}
-<title>Login</title>
-{% endblock meta %}
+{% block title %}Login — ShopAtSin{% endblock %}
 
 {% block content %}
-<div class="login">
-  <h1>Login</h1>
+<div class="max-w-md mx-auto">
+  <h1 class="text-2xl font-semibold mb-4">Welcome back 👋</h1>
 
-  <form method="POST" action="">
-    {% csrf_token %}
-    <table>
-      {{ form.as_table }}
-      <tr>
-        <td></td>
-        <td><input class="btn login_btn" type="submit" value="Login" /></td>
-      </tr>
-    </table>
-  </form>
+  <div class="bg-warm-grey rounded-xl shadow p-6">
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="rounded-lg p-3 bg-red-100 text-red-800 text-sm">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
 
-  {% if messages %}
-  <ul>
-    {% for message in messages %}
-    <li>{{ message }}</li>
-    {% endfor %}
-  </ul>
-  {% endif %} Don't have an account yet?
-  <a href="{% url 'main:register' %}">Register Now</a>
+      <div>
+        <label class="block text-sm font-medium mb-1" for="id_username">Username</label>
+        {{ form.username }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1" for="id_password">Password</label>
+        {{ form.password }}
+      </div>
+
+      <button type="submit" class="w-full inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium bg-maroon text-beige hover:opacity-90">Login</button>
+    </form>
+
+    <p class="text-sm text-maroon-dark/80 mt-4">
+      Belum punya akun?
+      <a href="{% url 'main:register' %}" class="font-medium text-maroon underline">Register dulu</a>
+    </p>
+  </div>
 </div>
 
-{% endblock content %}
+<script>
+  (function(){
+    const base = "w-full rounded-lg border border-maroon-dark/20 focus:outline-none focus:ring-2 focus:ring-maroon focus:border-maroon px-3 py-2 text-sm bg-white placeholder:opacity-50";
+    ['id_username','id_password'].forEach(id=>{
+      const el = document.getElementById(id);
+      if (el) el.className = (el.className || "") + " " + base;
+    });
+  })();
+</script>
+{% endblock %}
