@@ -6,7 +6,7 @@
   <h1 class="text-2xl font-semibold mb-4">✏️ Edit Product #{{ item.pk }}</h1>
 
   <div class="bg-warm-grey rounded-xl shadow p-6">
-    <form method="post" enctype="multipart/form-data" class="space-y-4">
+    <form method="post" enctype="multipart/form-data" class="space-y-4" id="edit-item-form">
       {% csrf_token %}
 
       {% if form.non_field_errors %}
@@ -42,6 +42,7 @@
           Back
         </a>
       </div>
+      <p id="edit-ajax-feedback" class="text-sm text-red-700 hidden"></p>
     </form>
   </div>
 </div>
@@ -57,6 +58,48 @@
     });
     document.querySelectorAll('input[type=checkbox], input[type=radio]').forEach(el=>{
       el.className = (el.className || "") + " h-4 w-4 text-maroon border-maroon-dark/30 focus:ring-maroon";
+    });
+  })();
+</script>
+<script>
+  (function() {
+    const form = document.getElementById("edit-item-form");
+    if (!form) return;
+    const feedback = document.getElementById("edit-ajax-feedback");
+    const submitUrl = "{% url 'main:update_item_ajax' item.pk %}";
+    const redirectUrl = "{% url 'main:show_item' id=item.pk %}";
+    const csrfToken = form.querySelector("input[name=csrfmiddlewaretoken]")?.value;
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      feedback.classList.add("hidden");
+      const formData = new FormData(form);
+      try {
+        const response = await fetch(submitUrl, {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrfToken,
+            "X-Requested-With": "XMLHttpRequest",
+          },
+          body: formData,
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          const message = Object.values(data.errors || {}).flat().join(" ") || data.message || "Failed to update product.";
+          feedback.textContent = message;
+          feedback.classList.remove("hidden");
+          window.showToast?.(message, "error");
+          return;
+        }
+        window.showToast?.(data.message || "Product updated successfully.", "success");
+        window.location.href = redirectUrl;
+      } catch (err) {
+        const message = "Failed to update product. Please try again.";
+        feedback.textContent = message;
+        feedback.classList.remove("hidden");
+        console.error(err);
+        window.showToast?.(message, "error");
+      }
     });
   })();
 </script>

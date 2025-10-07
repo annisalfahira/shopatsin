@@ -1,89 +1,773 @@
 {% extends 'base.html' %}
-{% load static humanize %}
+{% load static %}
 {% block title %}Products — ShopAtSin{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-4">
-  <h1 class="text-2xl mb-0">🛍️ Our Products</h1>
-  <div class="flex gap-2">
-    <a href="?filter=all"
-       class="inline-flex items-center justify-center rounded-full px-3 py-2 text-xs font-medium border-2 border-warm-grey text-maroon-dark hover:bg-warm-grey {% if filter_type == 'all' %}!bg-warm-grey{% endif %}">
-      All
-    </a>
-    <a href="?filter=my"
-       class="inline-flex items-center justify-center rounded-full px-3 py-2 text-xs font-medium border-2 border-warm-grey text-maroon-dark hover:bg-warm-grey {% if filter_type == 'my' %}!bg-warm-grey{% endif %}">
-      My Items
-    </a>
-    <a href="{% url 'main:create_item' %}"
-       class="inline-flex items-center justify-center rounded-full px-3 py-2 text-xs font-medium bg-maroon text-beige hover:opacity-90">
-      Add Product
-    </a>
+<section class="space-y-6">
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h1 class="text-2xl mb-1">🛍️ Our Products</h1>
+      <p class="text-sm text-maroon-dark/70">All product actions now run instantly with AJAX.</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button type="button" data-filter="all"
+              class="filter-btn inline-flex items-center justify-center rounded-full px-3 py-2 text-xs font-medium border-2 border-warm-grey text-maroon-dark hover:bg-warm-grey">
+        All
+      </button>
+      <button type="button" data-filter="my"
+              class="filter-btn inline-flex items-center justify-center rounded-full px-3 py-2 text-xs font-medium border-2 border-warm-grey text-maroon-dark hover:bg-warm-grey">
+        My Items
+      </button>
+      <button id="refresh-items"
+              class="inline-flex items-center justify-center rounded-full px-3 py-2 text-xs font-medium border-2 border-warm-grey text-maroon-dark hover:bg-warm-grey">
+        Refresh
+      </button>
+      <button id="open-create"
+              class="inline-flex items-center justify-center rounded-full px-3 py-2 text-xs font-medium bg-maroon text-beige hover:opacity-90">
+        Add Product
+      </button>
+    </div>
+  </div>
+  <span id="new-product" class="sr-only" aria-hidden="true"></span>
+
+  <div id="items-state" class="hidden text-center py-10 text-maroon-dark/70"></div>
+  <div id="items-grid" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+</section>
+
+<div id="edit-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm hidden items-center justify-center px-4">
+  <div class="w-full max-w-2xl bg-beige rounded-2xl shadow-xl overflow-hidden">
+    <div class="bg-maroon text-beige px-6 py-4 flex items-center justify-between">
+      <h3 class="text-lg font-semibold">Edit Product</h3>
+      <button type="button" id="close-edit" class="p-2 rounded-full hover:bg-white/20 focus:outline-none">
+        ✕
+      </button>
+    </div>
+    <form id="edit-form" class="p-6 space-y-4">
+      {% csrf_token %}
+      <input type="hidden" name="id" />
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <label class="block text-sm font-medium">
+          Name <span class="text-red-600">*</span>
+          <input type="text" name="name" required
+                 class="mt-1 w-full rounded-lg border border-maroon-dark/20 focus:outline-none focus:ring-2 focus:ring-maroon focus:border-maroon px-3 py-2 text-sm bg-white"/>
+        </label>
+        <label class="block text-sm font-medium">
+          Price <span class="text-red-600">*</span>
+          <input type="number" name="price" min="0" required
+                 class="mt-1 w-full rounded-lg border border-maroon-dark/20 focus:outline-none focus:ring-2 focus:ring-maroon focus:border-maroon px-3 py-2 text-sm bg-white"/>
+        </label>
+        <label class="block text-sm font-medium">
+          Category <span class="text-red-600">*</span>
+          <input type="text" name="category" required
+                 class="mt-1 w-full rounded-lg border border-maroon-dark/20 focus:outline-none focus:ring-2 focus:ring-maroon focus:border-maroon px-3 py-2 text-sm bg-white"/>
+        </label>
+        <label class="block text-sm font-medium">
+          Thumbnail URL <span class="text-red-600">*</span>
+          <input type="url" name="thumbnail" required
+                 class="mt-1 w-full rounded-lg border border-maroon-dark/20 focus:outline-none focus:ring-2 focus:ring-maroon focus:border-maroon px-3 py-2 text-sm bg-white"/>
+        </label>
+        <label class="block text-sm font-medium">
+          Stock
+          <input type="number" name="stock" min="0"
+                 class="mt-1 w-full rounded-lg border border-maroon-dark/20 focus:outline-none focus:ring-2 focus:ring-maroon focus:border-maroon px-3 py-2 text-sm bg-white"/>
+        </label>
+        <label class="block text-sm font-medium">
+          Brand
+          <input type="text" name="brand"
+                 class="mt-1 w-full rounded-lg border border-maroon-dark/20 focus:outline-none focus:ring-2 focus:ring-maroon focus:border-maroon px-3 py-2 text-sm bg-white"/>
+        </label>
+        <label class="block text-sm font-medium">
+          Rating
+          <input type="number" name="rating" min="0" max="5" step="0.1"
+                 class="mt-1 w-full rounded-lg border border-maroon-dark/20 focus:outline-none focus:ring-2 focus:ring-maroon focus:border-maroon px-3 py-2 text-sm bg-white"/>
+        </label>
+        <label class="flex items-center gap-2 text-sm font-medium mt-6 md:mt-0">
+          <input type="checkbox" name="is_featured"
+                 class="h-4 w-4 rounded border-maroon-dark/30 text-maroon focus:ring-maroon"/>
+          Featured product
+        </label>
+      </div>
+      <label class="block text-sm font-medium">
+        Description <span class="text-red-600">*</span>
+        <textarea name="description" rows="3" required
+                  class="mt-1 w-full rounded-lg border border-maroon-dark/20 focus:outline-none focus:ring-2 focus:ring-maroon focus:border-maroon px-3 py-2 text-sm bg-white"></textarea>
+      </label>
+      <div class="flex items-center gap-3 pt-2">
+        <button type="submit"
+                class="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium bg-maroon text-beige hover:opacity-90">
+          Update Product
+        </button>
+        <button type="button" id="cancel-edit"
+                class="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium border-2 border-warm-grey text-maroon-dark hover:bg-warm-grey">
+          Cancel
+        </button>
+      </div>
+      <p id="edit-feedback" class="text-sm text-red-700 hidden"></p>
+    </form>
   </div>
 </div>
 
-{% if not items %}
-  <div class="text-center bg-warm-grey rounded-xl p-8 shadow">
-    <img src="{% static 'img/empty.png' %}" alt="empty" class="mx-auto mb-3 w-28 h-28 object-contain" />
-    <p class="text-maroon-dark/80 mb-4">Belum ada data produk di ShopAtSin.</p>
-    <a href="{% url 'main:create_item' %}" class="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium bg-maroon text-beige hover:opacity-90">Add Product Here!</a>
+<template id="item-card-template">
+  <div class="bg-warm-grey rounded-xl shadow hover:shadow-md transition overflow-hidden flex flex-col h-full">
+    <div class="item-thumbnail"></div>
+    <div class="p-4 flex flex-col flex-1">
+      <h5 class="text-lg font-semibold mb-1 item-name"></h5>
+      <p class="text-sm text-maroon-dark/70 mb-2 item-meta"></p>
+      <p class="font-semibold mb-2 item-price hidden"></p>
+      <p class="text-sm text-maroon-dark/80 mb-0 item-description" style="-webkit-line-clamp:3;-webkit-box-orient:vertical;display:-webkit-box;overflow:hidden;"></p>
+      <div class="mt-auto pt-3">
+        <div class="flex flex-wrap gap-2 item-actions"></div>
+      </div>
+    </div>
   </div>
-{% else %}
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-    {% for p in items %}
-      <!-- CARD: thumbnail ikut ukuran asli (no crop/backdrop/frame) + tombol locked kiri-bawah -->
-      <div class="bg-warm-grey rounded-xl shadow hover:shadow-md transition overflow-hidden flex flex-col h-full">
+</template>
 
-        {% if p.thumbnail %}
-          <!-- Full image: lebar penuh card, tinggi auto (no crop), gak dipaksa frame -->
-          <img src="{{ p.thumbnail }}" alt="{{ p.name }}"
-               class="w-full h-auto block">
-        {% else %}
-          <div class="w-full px-4 py-8 text-center text-maroon-dark/50 text-sm">No Image</div>
-        {% endif %}
+<div id="create-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm hidden items-center justify-center px-4">
+  <div class="w-full max-w-2xl bg-beige rounded-2xl shadow-xl overflow-hidden">
+    <div class="bg-maroon text-beige px-6 py-4 flex items-center justify-between">
+      <h3 class="text-lg font-semibold">Add New Product</h3>
+      <button type="button" id="close-create" class="p-2 rounded-full hover:bg-white/20 focus:outline-none">
+        ✕
+      </button>
+    </div>
+    <form id="create-form" class="p-6 space-y-4">
+      {% csrf_token %}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <label class="block text-sm font-medium">
+          Name <span class="text-red-600">*</span>
+          <input type="text" name="name" required
+                 class="mt-1 w-full rounded-lg border border-maroon-dark/20 focus:outline-none focus:ring-2 focus:ring-maroon focus:border-maroon px-3 py-2 text-sm bg-white"/>
+        </label>
+        <label class="block text-sm font-medium">
+          Price <span class="text-red-600">*</span>
+          <input type="number" name="price" min="0" required
+                 class="mt-1 w-full rounded-lg border border-maroon-dark/20 focus:outline-none focus:ring-2 focus:ring-maroon focus:border-maroon px-3 py-2 text-sm bg-white"/>
+        </label>
+        <label class="block text-sm font-medium">
+          Category <span class="text-red-600">*</span>
+          <input type="text" name="category" required
+                 class="mt-1 w-full rounded-lg border border-maroon-dark/20 focus:outline-none focus:ring-2 focus:ring-maroon focus:border-maroon px-3 py-2 text-sm bg-white"/>
+        </label>
+        <label class="block text-sm font-medium">
+          Thumbnail URL <span class="text-red-600">*</span>
+          <input type="url" name="thumbnail" required
+                 class="mt-1 w-full rounded-lg border border-maroon-dark/20 focus:outline-none focus:ring-2 focus:ring-maroon focus:border-maroon px-3 py-2 text-sm bg-white"/>
+        </label>
+        <label class="block text-sm font-medium">
+          Stock
+          <input type="number" name="stock" min="0" value="0"
+                 class="mt-1 w-full rounded-lg border border-maroon-dark/20 focus:outline-none focus:ring-2 focus:ring-maroon focus:border-maroon px-3 py-2 text-sm bg-white"/>
+        </label>
+        <label class="block text-sm font-medium">
+          Brand
+          <input type="text" name="brand"
+                 class="mt-1 w-full rounded-lg border border-maroon-dark/20 focus:outline-none focus:ring-2 focus:ring-maroon focus:border-maroon px-3 py-2 text-sm bg-white"/>
+        </label>
+        <label class="block text-sm font-medium">
+          Rating
+          <input type="number" name="rating" min="0" max="5" step="0.1" value="0"
+                 class="mt-1 w-full rounded-lg border border-maroon-dark/20 focus:outline-none focus:ring-2 focus:ring-maroon focus:border-maroon px-3 py-2 text-sm bg-white"/>
+        </label>
+        <label class="flex items-center gap-2 text-sm font-medium mt-6 md:mt-0">
+          <input type="checkbox" name="is_featured"
+                 class="h-4 w-4 rounded border-maroon-dark/30 text-maroon focus:ring-maroon"/>
+          Featured product
+        </label>
+      </div>
+      <label class="block text-sm font-medium">
+        Description <span class="text-red-600">*</span>
+        <textarea name="description" rows="3" required
+                  class="mt-1 w-full rounded-lg border border-maroon-dark/20 focus:outline-none focus:ring-2 focus:ring-maroon focus:border-maroon px-3 py-2 text-sm bg-white"></textarea>
+      </label>
+      <div class="flex items-center gap-3 pt-2">
+        <button type="submit"
+                class="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium bg-maroon text-beige hover:opacity-90">
+          Save Product
+        </button>
+        <button type="button" id="cancel-create"
+                class="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium border-2 border-warm-grey text-maroon-dark hover:bg-warm-grey">
+          Cancel
+        </button>
+      </div>
+      <p id="create-feedback" class="text-sm text-red-700 hidden"></p>
+    </form>
+  </div>
+</div>
 
-        <!-- Content -->
-        <div class="p-4 flex flex-col flex-1">
-          <h5 class="text-lg font-semibold mb-1">{{ p.name }}</h5>
-          <p class="text-sm text-maroon-dark/70 mb-2">#{{ p.pk }} • {{ p.category }}</p>
-          {% if p.price %}<p class="font-semibold mb-2">Rp {{ p.price|intcomma }}</p>{% endif %}
-          {% if p.description %}
-            <p class="text-sm text-maroon-dark/80 mb-0"
-              style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">
-              {{ p.description }}
-            </p>
-          {% endif %}
-
-          <!-- Tombol fixed di kiri-bawah -->
-          <div class="mt-auto pt-3">
-            <div class="flex flex-wrap gap-2">
-              <!-- DETAIL = SOLID -->
-              <a href="{% url 'main:show_item' p.pk %}"
-                 class="inline-flex items-center justify-center rounded-full px-3 py-1.5 text-xs font-medium bg-maroon text-beige hover:opacity-90">
-                Detail
-              </a>
-
-              {% if user.is_authenticated and p.user == user %}
-                <!-- EDIT = outline maroon -->
-                <a href="{% url 'main:edit_item' p.pk %}"
-                   class="inline-flex items-center justify-center rounded-full px-3 py-1.5 text-xs font-medium border-2 border-maroon text-maroon hover:bg-maroon hover:text-beige">
-                  Edit
-                </a>
-
-                <!-- DELETE = outline merah -->
-                <form action="{% url 'main:delete_item' p.pk %}" method="post" class="inline">
-                  {% csrf_token %}
-                  <button type="submit"
-                          class="inline-flex items-center justify-center rounded-full px-3 py-1.5 text-xs font-medium border-2 border-[#b02a37] text-[#b02a37] hover:bg-[#b02a37] hover:text-white"
-                          onclick="return confirm('Hapus produk ini?')">
-                    Delete
-                  </button>
-                </form>
-              {% endif %}
-            </div>
+<div id="detail-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm hidden items-center justify-center px-4">
+  <div class="w-full max-w-3xl bg-beige rounded-2xl shadow-xl overflow-hidden">
+    <div class="bg-maroon text-beige px-6 py-4 flex items-center justify-between">
+      <h3 class="text-lg font-semibold">Product Detail</h3>
+      <button type="button" id="close-detail" class="p-2 rounded-full hover:bg-white/20 focus:outline-none">✕</button>
+    </div>
+    <div class="p-6 space-y-4">
+      <div class="flex flex-col md:flex-row gap-4">
+        <div class="md:w-1/2">
+          <img id="detail-thumbnail" src="" alt="" class="w-full rounded-xl shadow-sm hidden">
+          <div id="detail-no-image" class="w-full px-4 py-8 text-center text-maroon-dark/60 bg-warm-grey/70 rounded-xl hidden">No Image</div>
+        </div>
+        <div class="md:w-1/2 space-y-2">
+          <div>
+            <p class="text-xs uppercase tracking-wide text-maroon-dark/60">Product</p>
+            <h4 id="detail-name" class="text-2xl font-semibold"></h4>
+            <p id="detail-category" class="text-sm text-maroon-dark/70"></p>
           </div>
+          <div id="detail-price" class="text-xl font-semibold"></div>
+          <p id="detail-description" class="text-sm text-maroon-dark/85 whitespace-pre-wrap"></p>
+          <dl class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-sm">
+            <div>
+              <dt class="font-medium">Brand</dt>
+              <dd id="detail-brand" class="text-maroon-dark/80"></dd>
+            </div>
+            <div>
+              <dt class="font-medium">Stock</dt>
+              <dd id="detail-stock" class="text-maroon-dark/80"></dd>
+            </div>
+            <div>
+              <dt class="font-medium">Rating</dt>
+              <dd id="detail-rating" class="text-maroon-dark/80"></dd>
+            </div>
+            <div>
+              <dt class="font-medium">Featured</dt>
+              <dd id="detail-featured" class="text-maroon-dark/80"></dd>
+            </div>
+            <div>
+              <dt class="font-medium">Date Added</dt>
+              <dd id="detail-date" class="text-maroon-dark/80"></dd>
+            </div>
+          </dl>
         </div>
       </div>
-    {% endfor %}
+      <div class="flex flex-wrap gap-2 pt-4 justify-end text-sm">
+        <a id="detail-view-page"
+           class="inline-flex items-center justify-center rounded-full px-4 py-2 border-2 border-warm-grey text-maroon-dark hover:bg-warm-grey"
+           href="#"
+           target="_blank"
+           rel="noopener">
+          Open Full Page
+        </a>
+        <button type="button" id="close-detail-footer"
+                class="inline-flex items-center justify-center rounded-full px-4 py-2 bg-maroon text-beige hover:opacity-90">
+          Close
+        </button>
+      </div>
+    </div>
   </div>
-{% endif %}
+</div>
+
+<div id="delete-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm hidden items-center justify-center px-4">
+  <div class="w-full max-w-md bg-beige rounded-2xl shadow-xl overflow-hidden">
+    <div class="bg-maroon text-beige px-6 py-4">
+      <h3 class="text-lg font-semibold">Delete Product</h3>
+    </div>
+    <div class="p-6 space-y-4 text-sm text-maroon-dark">
+      <p>Are you sure you want to delete <span id="delete-product-name" class="font-semibold text-maroon"></span>?</p>
+      <p class="text-maroon-dark/70">This action cannot be undone.</p>
+      <div class="flex flex-wrap justify-end gap-2">
+        <button type="button" id="cancel-delete"
+                class="inline-flex items-center justify-center rounded-full px-4 py-2 border-2 border-warm-grey text-maroon-dark hover:bg-warm-grey">
+          Cancel
+        </button>
+        <button type="button" id="confirm-delete"
+                class="inline-flex items-center justify-center rounded-full px-4 py-2 bg-[#b02a37] text-white hover:opacity-90">
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    const fetchUrl = "{% url 'main:fetch_items' %}";
+    const createUrl = "{% url 'main:create_item_ajax' %}";
+    const updateUrlTemplate = "{% url 'main:update_item_ajax' 0 %}";
+    const deleteUrlTemplate = "{% url 'main:delete_item_ajax' 0 %}";
+
+    const csrfToken = document.querySelector("#create-form input[name=csrfmiddlewaretoken]")?.value || "";
+
+    let currentFilter = "all";
+    let itemsCache = [];
+    let pendingDeleteId = null;
+    let pendingDeleteName = "";
+
+    const filterButtons = document.querySelectorAll(".filter-btn");
+    const refreshBtn = document.getElementById("refresh-items");
+    const itemsGrid = document.getElementById("items-grid");
+    const itemsState = document.getElementById("items-state");
+    const cardTemplate = document.getElementById("item-card-template");
+
+    const createModal = document.getElementById("create-modal");
+    const openCreateBtn = document.getElementById("open-create");
+    const closeCreateBtn = document.getElementById("close-create");
+    const cancelCreateBtn = document.getElementById("cancel-create");
+    const createForm = document.getElementById("create-form");
+    const createFeedback = document.getElementById("create-feedback");
+    const createSubmit = createForm?.querySelector('button[type="submit"]');
+
+    const editModal = document.getElementById("edit-modal");
+    const editForm = document.getElementById("edit-form");
+    const editFeedback = document.getElementById("edit-feedback");
+    const editSubmit = editForm?.querySelector('button[type="submit"]');
+    const closeEditBtn = document.getElementById("close-edit");
+    const cancelEditBtn = document.getElementById("cancel-edit");
+
+    const detailModal = document.getElementById("detail-modal");
+    const closeDetailBtn = document.getElementById("close-detail");
+    const closeDetailFooter = document.getElementById("close-detail-footer");
+    const detailThumbnail = document.getElementById("detail-thumbnail");
+    const detailNoImage = document.getElementById("detail-no-image");
+    const detailName = document.getElementById("detail-name");
+    const detailCategory = document.getElementById("detail-category");
+    const detailPrice = document.getElementById("detail-price");
+    const detailDescription = document.getElementById("detail-description");
+    const detailBrand = document.getElementById("detail-brand");
+    const detailStock = document.getElementById("detail-stock");
+    const detailRating = document.getElementById("detail-rating");
+    const detailFeatured = document.getElementById("detail-featured");
+    const detailDate = document.getElementById("detail-date");
+    const detailViewPage = document.getElementById("detail-view-page");
+
+    const deleteModal = document.getElementById("delete-modal");
+    const deleteProductName = document.getElementById("delete-product-name");
+    const cancelDeleteBtn = document.getElementById("cancel-delete");
+    const confirmDeleteBtn = document.getElementById("confirm-delete");
+
+    const stateTemplates = {
+      loading: `
+        <div class="flex flex-col items-center justify-center gap-3 py-12 text-maroon-dark/70">
+          <svg class="h-8 w-8 animate-spin text-maroon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4A4 4 0 008 12H4z"></path>
+          </svg>
+          <p class="text-sm font-medium">Loading products…</p>
+        </div>
+      `,
+      empty: `
+        <div class="text-center bg-warm-grey rounded-xl p-8 shadow">
+          <img src="{% static 'img/no-products-yet.png' %}" alt="No products yet" class="mx-auto mb-3 w-100 h-100 object-contain" />
+          <p class="text-maroon-dark/80 mb-6">Belum ada produk kamu di ShopAtSin.</p>
+          <button type="button" class="inline-flex items-center justify-center rounded-full px-8 py-4 text-sm font-medium bg-maroon text-beige hover:opacity-90" id="empty-add-btn">
+            Add Product Here!
+          </button>
+        </div>
+      `,
+      error: (msg) => `
+        <div class="text-center bg-red-50 border border-red-200 rounded-xl p-6 shadow space-y-3">
+          <p class="text-sm text-red-700 font-medium">Failed to load products.</p>
+          <p class="text-xs text-red-600">${msg || 'An unexpected error occurred.'}</p>
+          <button type="button" class="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium border-2 border-red-400 text-red-700 hover:bg-red-100" id="retry-fetch">
+            Try Again
+          </button>
+        </div>
+      `,
+    };
+
+    function setState(state, message) {
+      if (!itemsState || !itemsGrid) return;
+      if (state === "ready") {
+        itemsState.classList.add("hidden");
+        itemsGrid.classList.remove("hidden");
+        return;
+      }
+      let html = "";
+      if (state === "loading") html = stateTemplates.loading;
+      else if (state === "empty") html = stateTemplates.empty;
+      else if (state === "error") {
+        const safeMessage = escapeHtml(message || "An unexpected error occurred.");
+        html = stateTemplates.error(safeMessage);
+      }
+      itemsState.innerHTML = html;
+      itemsState.classList.remove("hidden");
+      itemsGrid.classList.add("hidden");
+      if (state === "empty") {
+        document.getElementById("empty-add-btn")?.addEventListener("click", openCreateModal);
+      } else if (state === "error") {
+        document.getElementById("retry-fetch")?.addEventListener("click", () => fetchItems());
+      }
+    }
+
+    function setRefreshing(isLoading) {
+      if (!refreshBtn) return;
+      refreshBtn.disabled = isLoading;
+      refreshBtn.classList.toggle("opacity-60", isLoading);
+      refreshBtn.classList.toggle("cursor-not-allowed", isLoading);
+      refreshBtn.setAttribute("aria-busy", isLoading ? "true" : "false");
+    }
+
+    function openModal(modal) {
+      if (!modal) return;
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+      modal.setAttribute("aria-hidden", "false");
+    }
+
+    function closeModal(modal) {
+      if (!modal) return;
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+      modal.setAttribute("aria-hidden", "true");
+    }
+
+    function highlightFilter() {
+      filterButtons.forEach(btn => {
+        if (btn.dataset.filter === currentFilter) {
+          btn.classList.add("bg-warm-grey");
+        } else {
+          btn.classList.remove("bg-warm-grey");
+        }
+      });
+    }
+
+    function formatCurrency(value) {
+      if (value === null || value === undefined || value === "") return "";
+      const intValue = Number(value);
+      if (Number.isNaN(intValue)) return "";
+      return new Intl.NumberFormat("id-ID").format(intValue);
+    }
+
+    function formatRating(value) {
+      if (value === null || value === undefined || value === "") return "Not rated";
+      const number = Number(value);
+      if (Number.isNaN(number)) return "Not rated";
+      return `${number}/5`;
+    }
+
+    function escapeHtml(text) {
+      if (typeof text !== "string") return "";
+      const map = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
+      return text.replace(/[&<>"']/g, char => map[char]);
+    }
+
+    function renderItems() {
+      if (!itemsGrid || !cardTemplate) return;
+      const fragment = document.createDocumentFragment();
+      itemsCache.forEach(item => {
+        const node = cardTemplate.content.firstElementChild.cloneNode(true);
+        const thumb = node.querySelector(".item-thumbnail");
+        const name = node.querySelector(".item-name");
+        const meta = node.querySelector(".item-meta");
+        const price = node.querySelector(".item-price");
+        const description = node.querySelector(".item-description");
+        const actions = node.querySelector(".item-actions");
+
+        if (item.thumbnail) {
+          thumb.innerHTML = `<img src="${item.thumbnail}" alt="${item.name}" class="w-full h-auto block">`;
+        } else {
+          thumb.innerHTML = '<div class="w-full px-4 py-8 text-center text-maroon-dark/50 text-sm">No Image</div>';
+        }
+        name.textContent = item.name;
+        meta.textContent = `#${item.id} • ${item.category || "Uncategorized"}`;
+        if (item.price !== null && item.price !== undefined) {
+          price.textContent = `Rp ${formatCurrency(item.price)}`;
+          price.classList.remove("hidden");
+        } else {
+          price.classList.add("hidden");
+        }
+        description.textContent = item.description || "No description provided.";
+
+        actions.innerHTML = "";
+
+        const detailBtn = document.createElement("button");
+        detailBtn.type = "button";
+        detailBtn.className = "inline-flex items-center justify-center rounded-full px-3 py-1.5 text-xs font-medium bg-maroon text-beige hover:opacity-90";
+        detailBtn.textContent = "Detail";
+        detailBtn.addEventListener("click", () => openDetailModal(item));
+        actions.appendChild(detailBtn);
+
+        if (item.is_owner ) {
+          const editBtn = document.createElement("button");
+          editBtn.type = "button";
+          editBtn.className = "inline-flex items-center justify-center rounded-full px-3 py-1.5 text-xs font-medium border-2 border-maroon text-maroon hover:bg-maroon hover:text-beige";
+          editBtn.textContent = "Edit";
+          editBtn.addEventListener("click", () => openEditModal(item));
+
+          const deleteBtn = document.createElement("button");
+          deleteBtn.type = "button";
+          deleteBtn.className = "inline-flex items-center justify-center rounded-full px-3 py-1.5 text-xs font-medium border-2 border-[#b02a37] text-[#b02a37] hover:bg-[#b02a37] hover:text-white";
+          deleteBtn.textContent = "Delete";
+          deleteBtn.addEventListener("click", () => openDeleteModal(item));
+
+          actions.appendChild(editBtn);
+          actions.appendChild(deleteBtn);
+        }
+
+        fragment.appendChild(node);
+      });
+
+      itemsGrid.innerHTML = "";
+      itemsGrid.appendChild(fragment);
+    }
+
+    function openCreateModal() {
+      if (!createForm) return;
+      createForm.reset();
+      createFeedback?.classList.add("hidden");
+      openModal(createModal);
+      createForm.querySelector('input[name="name"]')?.focus();
+    }
+
+    function closeCreateModal() {
+      closeModal(createModal);
+    }
+
+    function openEditModal(item) {
+      if (!editForm) return;
+      editForm.reset();
+      editFeedback?.classList.add("hidden");
+      editForm.querySelector('input[name="id"]').value = item.id;
+      editForm.querySelector('input[name="name"]').value = item.name || "";
+      editForm.querySelector('input[name="price"]').value = item.price ?? "";
+      editForm.querySelector('input[name="category"]').value = item.category || "";
+      editForm.querySelector('input[name="thumbnail"]').value = item.thumbnail || "";
+      editForm.querySelector('input[name="stock"]').value = item.stock ?? "";
+      editForm.querySelector('input[name="brand"]').value = item.brand || "";
+      editForm.querySelector('input[name="rating"]').value = item.rating ?? "";
+      editForm.querySelector('textarea[name="description"]').value = item.description || "";
+      editForm.querySelector('input[name="is_featured"]').checked = Boolean(item.is_featured);
+      openModal(editModal);
+      editForm.querySelector('input[name="name"]')?.focus();
+    }
+
+    function closeEditModal() {
+      closeModal(editModal);
+    }
+
+    function openDetailModal(item) {
+      if (!item) return;
+      detailName.textContent = item.name || "Unnamed product";
+      detailCategory.textContent = `#${item.id} • ${item.category || "Uncategorized"}`;
+
+      if (item.price !== null && item.price !== undefined) {
+        detailPrice.textContent = `Rp ${formatCurrency(item.price)}`;
+        detailPrice.classList.remove("hidden");
+      } else {
+        detailPrice.textContent = "";
+        detailPrice.classList.add("hidden");
+      }
+
+      detailDescription.textContent = item.description || "No description provided.";
+      detailBrand.textContent = item.brand || "—";
+      detailStock.textContent = item.stock !== null && item.stock !== undefined ? item.stock : "—";
+      detailRating.textContent = formatRating(item.rating);
+      detailFeatured.textContent = item.is_featured ? "Yes" : "No";
+      detailDate.textContent = item.date_added ? new Date(item.date_added).toLocaleDateString("id-ID") : "—";
+
+      if (item.thumbnail) {
+        detailThumbnail.src = item.thumbnail;
+        detailThumbnail.alt = item.name || "Product thumbnail";
+        detailThumbnail.classList.remove("hidden");
+        detailNoImage.classList.add("hidden");
+      } else {
+        detailThumbnail.classList.add("hidden");
+        detailNoImage.classList.remove("hidden");
+      }
+
+      if (detailViewPage) {
+        detailViewPage.href = item.detail_url || "#";
+      }
+
+      openModal(detailModal);
+    }
+
+    function closeDetailModal() {
+      closeModal(detailModal);
+    }
+
+    function openDeleteModal(item) {
+      pendingDeleteId = item?.id ?? null;
+      pendingDeleteName = item?.name || "";
+      if (deleteProductName) {
+        deleteProductName.textContent = pendingDeleteName || `#${pendingDeleteId}`;
+      }
+      openModal(deleteModal);
+    }
+
+    function closeDeleteModal() {
+      pendingDeleteId = null;
+      pendingDeleteName = "";
+      closeModal(deleteModal);
+    }
+
+    async function fetchItems(options = {}) {
+      const { silent = false } = options;
+      if (!silent) setState("loading");
+      setRefreshing(true);
+      try {
+        const response = await fetch(`${fetchUrl}?filter=${encodeURIComponent(currentFilter)}`, {
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+        });
+        if (!response.ok) throw new Error("Failed to load products.");
+        const data = await response.json();
+        itemsCache = data.items || [];
+        if (!itemsCache.length) {
+          setState("empty");
+          return;
+        }
+        setState("ready");
+        renderItems();
+      } catch (err) {
+        const message = err?.message || "Failed to load products.";
+        setState("error", message);
+        window.showToast?.(message, "error");
+      } finally {
+        setRefreshing(false);
+      }
+    }
+
+    createForm?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      createFeedback?.classList.add("hidden");
+      if (createSubmit) createSubmit.disabled = true;
+      try {
+        const response = await fetch(createUrl, {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrfToken,
+            "X-Requested-With": "XMLHttpRequest",
+          },
+          body: new FormData(createForm),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          const errors = Object.values(data.errors || {}).flat().join(" ");
+          const message = errors || data.message || "Failed to save product.";
+          if (createFeedback) {
+            createFeedback.textContent = message;
+            createFeedback.classList.remove("hidden");
+          }
+          window.showToast?.(message, "error");
+          return;
+        }
+        await fetchItems({ silent: true });
+        window.showToast?.(data.message || "Product created successfully.", "success");
+        closeCreateModal();
+      } catch (err) {
+        const message = err?.message || "Failed to save product.";
+        if (createFeedback) {
+          createFeedback.textContent = message;
+          createFeedback.classList.remove("hidden");
+        }
+        window.showToast?.(message, "error");
+      } finally {
+        if (createSubmit) createSubmit.disabled = false;
+      }
+    });
+
+    editForm?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      editFeedback?.classList.add("hidden");
+      if (editSubmit) editSubmit.disabled = true;
+      const formData = new FormData(editForm);
+      const id = formData.get("id");
+      if (!id) {
+        window.showToast?.("Missing product identifier.", "error");
+        if (editSubmit) editSubmit.disabled = false;
+        return;
+      }
+      try {
+        const response = await fetch(updateUrlTemplate.replace("0", id), {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrfToken,
+            "X-Requested-With": "XMLHttpRequest",
+          },
+          body: formData,
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          const errors = Object.values(data.errors || {}).flat().join(" ");
+          const message = errors || data.message || "Failed to update product.";
+          if (editFeedback) {
+            editFeedback.textContent = message;
+            editFeedback.classList.remove("hidden");
+          }
+          window.showToast?.(message, "error");
+          return;
+        }
+        await fetchItems({ silent: true });
+        window.showToast?.(data.message || "Product updated successfully.", "success");
+        closeEditModal();
+      } catch (err) {
+        const message = err?.message || "Failed to update product.";
+        if (editFeedback) {
+          editFeedback.textContent = message;
+          editFeedback.classList.remove("hidden");
+        }
+        window.showToast?.(message, "error");
+      } finally {
+        if (editSubmit) editSubmit.disabled = false;
+      }
+    });
+
+    async function deleteItem() {
+      if (!pendingDeleteId) return;
+      confirmDeleteBtn?.classList.add("opacity-75");
+      confirmDeleteBtn && (confirmDeleteBtn.disabled = true);
+      try {
+        const response = await fetch(deleteUrlTemplate.replace("0", pendingDeleteId), {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrfToken,
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || "Failed to delete product.");
+        await fetchItems({ silent: true });
+        window.showToast?.(data.message || "Product deleted successfully.", "success");
+        closeDeleteModal();
+      } catch (err) {
+        const message = err?.message || "Failed to delete product.";
+        window.showToast?.(message, "error");
+      } finally {
+        confirmDeleteBtn?.classList.remove("opacity-75");
+        if (confirmDeleteBtn) confirmDeleteBtn.disabled = false;
+      }
+    }
+
+    openCreateBtn?.addEventListener("click", openCreateModal);
+    closeCreateBtn?.addEventListener("click", closeCreateModal);
+    cancelCreateBtn?.addEventListener("click", closeCreateModal);
+    createModal?.addEventListener("click", (event) => {
+      if (event.target === createModal) closeCreateModal();
+    });
+
+    closeEditBtn?.addEventListener("click", closeEditModal);
+    cancelEditBtn?.addEventListener("click", closeEditModal);
+    editModal?.addEventListener("click", (event) => {
+      if (event.target === editModal) closeEditModal();
+    });
+
+    closeDetailBtn?.addEventListener("click", closeDetailModal);
+    closeDetailFooter?.addEventListener("click", closeDetailModal);
+    detailModal?.addEventListener("click", (event) => {
+      if (event.target === detailModal) closeDetailModal();
+    });
+
+    cancelDeleteBtn?.addEventListener("click", closeDeleteModal);
+    confirmDeleteBtn?.addEventListener("click", deleteItem);
+    deleteModal?.addEventListener("click", (event) => {
+      if (event.target === deleteModal) closeDeleteModal();
+    });
+
+    filterButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        currentFilter = btn.dataset.filter || "all";
+        highlightFilter();
+        fetchItems();
+      });
+    });
+
+    refreshBtn?.addEventListener("click", () => fetchItems());
+
+    highlightFilter();
+
+    if (window.location.hash === "#new-product") {
+      setTimeout(() => openCreateModal(), 200);
+    }
+
+    fetchItems();
+  })();
+</script>
 {% endblock %}

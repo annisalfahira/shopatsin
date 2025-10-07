@@ -30,19 +30,16 @@
         </a>
 
         {% if user.is_authenticated and item.user == user %}
+          <input type="hidden" id="csrf-token" value="{{ csrf_token }}">
           <a href="{% url 'main:edit_item' item.pk %}"
              class="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium border-2 border-maroon text-maroon hover:bg-maroon hover:text-beige">
             Edit
           </a>
 
-          <form action="{% url 'main:delete_item' item.pk %}" method="post" class="inline">
-            {% csrf_token %}
-            <button type="submit"
-               class="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium border-2 border-[#b02a37] text-[#b02a37] hover:bg-[#b02a37] hover:text-white"
-               onclick="return confirm('Hapus produk ini?')">
-              Delete
-            </button>
-          </form>
+          <button type="button" id="detail-delete-btn"
+             class="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium border-2 border-[#b02a37] text-[#b02a37] hover:bg-[#b02a37] hover:text-white">
+            Delete
+          </button>
         {% endif %}
       </div>
 
@@ -55,4 +52,32 @@
     </div>
   </div>
 </div>
+<script>
+  (function() {
+    const deleteBtn = document.getElementById("detail-delete-btn");
+    if (!deleteBtn) return;
+    const csrfInput = document.getElementById("csrf-token");
+    const csrfToken = csrfInput ? csrfInput.value : "";
+    deleteBtn.addEventListener("click", async () => {
+      if (!confirm("Hapus produk ini?")) return;
+      try {
+        const response = await fetch("{% url 'main:delete_item_ajax' item.pk %}", {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrfToken,
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || "Failed to delete product.");
+        window.showToast?.(data.message || "Product deleted successfully.", "success");
+        window.location.href = "{% url 'main:show_main' %}";
+      } catch (err) {
+        const message = err.message || "Failed to delete product.";
+        window.showToast?.(message, "error");
+        console.error(err);
+      }
+    });
+  })();
+</script>
 {% endblock %}

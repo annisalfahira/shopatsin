@@ -837,3 +837,47 @@ Semua form aku kasih `{% csrf_token %}` biar aman dari CSRF. Aksi create/edit/de
 Selain itu, aku pake Django messages framework buat kasih feedback. Jadi kalau produk berhasil ditambah, diupdate, atau dihapus, muncul notifikasi kecil di halaman.
 
 </details>
+
+<details>
+<summary> <b> Tugas 6: Javascript dan AJAX </b> </summary>
+
+> ### Apa perbedaan antara synchronous request dan asynchronous request?
+* Synchronous request artinya browser akan menunggu respons dari server sebelum bisa melakukan hal lain. Selama permintaan diproses, halaman akan “berhenti” sejenak — misalnya saat form dikirim, seluruh halaman akan reload setelah server mengembalikan hasil.
+
+* Asynchronous request (AJAX) artinya permintaan dikirim di background tanpa menghentikan interaksi pengguna. Browser tidak perlu menunggu seluruh halaman di-render ulang, cukup sebagian datanya saja yang diperbarui lewat JavaScript.
+
+> ### Bagaimana AJAX bekerja di Django (alur request–response)?
+1. **Event di frontend** (misalnya klik tombol “Tambah Item”) memicu fungsi JavaScript yang mengirim *request* ke endpoint Django menggunakan `fetch()` atau `XMLHttpRequest`.
+2. **Django menerima request** tersebut di view khusus AJAX (biasanya diawali `/api/...`).
+3. **View Django** memproses data (validasi form, operasi database, autentikasi, dsb.) lalu mengembalikan hasil berupa **`JsonResponse`** berisi data, status, dan pesan.
+4. **Frontend menerima JSON** tersebut, lalu **mengubah DOM** (misal menambah kartu produk baru di halaman) tanpa reload browser.
+
+> ### Apa keuntungan menggunakan AJAX dibandingkan render biasa di Django?
+
+* **Tidak perlu reload halaman penuh** → hanya bagian yang berubah yang diperbarui.
+* **Performa dan responsivitas lebih cepat** → waktu tunggu lebih pendek dan UX terasa mulus.
+* **Lebih hemat bandwidth** → karena hanya data yang dikirim, bukan seluruh HTML.
+* **Struktur kode lebih modular** → pemisahan jelas antara *backend API* dan *frontend logic*.
+* **Bisa reusable** → endpoint JSON yang sama bisa dipakai untuk aplikasi mobile atau integrasi lain.
+
+>### Bagaimana cara memastikan keamanan saat menggunakan AJAX untuk fitur Login dan Register di Django?
+
+* **Gunakan CSRF Token**
+  Tambahkan header `X-CSRFToken` di setiap request AJAX POST/PUT/DELETE untuk mencegah *Cross-Site Request Forgery*.
+* **Validasi input di server-side**
+  Jangan pernah percaya data dari frontend; gunakan Django Form untuk validasi username, password, dll.
+* **Gunakan HTTPS**
+  Supaya data login (terutama password) tidak bisa disadap.
+* **Batasi brute-force login**
+  Misalnya dengan rate limiting atau delay setelah beberapa percobaan gagal.
+* **Gunakan cookie yang aman**
+  Aktifkan `CSRF_COOKIE_SECURE`, `SESSION_COOKIE_SECURE`, dan `SameSite` di setting produksi.
+
+>### Bagaimana AJAX mempengaruhi pengalaman pengguna (User Experience) pada website?
+
+* **Interaksi terasa lebih cepat dan mulus**, karena user tidak melihat reload halaman setiap kali mengirim data.
+* **Feedback instan**: pengguna langsung melihat toast notifikasi, loading spinner, atau error message di tempat.
+* **Lebih interaktif dan modern**: tampilan seperti aplikasi SPA (Single Page Application).
+* **Mengurangi frustrasi pengguna**: tidak kehilangan posisi scroll atau data input saat halaman diperbarui.
+
+</details>

@@ -31,6 +31,67 @@
   <style>
     body { font-family: 'Poppins', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
   </style>
+  <script>
+    (function(){
+      const typeStyles = {
+        success: 'bg-green-600 text-white',
+        error: 'bg-red-600 text-white',
+        warning: 'bg-amber-500 text-maroon-dark',
+        info: 'bg-maroon text-beige',
+      };
+
+      window.showToast = function(message, type='info', options={}) {
+        if (!message) return;
+        const { duration = 3500 } = options;
+        const stackId = options.stackId || 'toast-stack';
+        let stack = document.getElementById(stackId);
+
+        const ensureStack = () => {
+          if (!stack) {
+            stack = document.createElement('div');
+            stack.id = stackId;
+            stack.className = 'fixed top-5 right-5 z-[60] flex flex-col gap-2 max-w-xs sm:max-w-sm';
+            document.body.appendChild(stack);
+          }
+          return stack;
+        };
+
+        const container = ensureStack();
+        const toast = document.createElement('div');
+        toast.className = `pointer-events-auto rounded-xl px-4 py-3 shadow-lg transition transform translate-x-0 ${typeStyles[type] || typeStyles.info}`;
+        toast.setAttribute('role', 'status');
+
+        const layout = document.createElement('div');
+        layout.className = 'flex items-start gap-2';
+
+        const textSpan = document.createElement('span');
+        textSpan.className = 'flex-1 text-sm leading-snug';
+        textSpan.textContent = message;
+
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'shrink-0 text-sm font-semibold hover:opacity-80 focus:outline-none';
+        closeBtn.textContent = '✕';
+
+        layout.appendChild(textSpan);
+        layout.appendChild(closeBtn);
+        toast.appendChild(layout);
+
+        const dismiss = () => {
+          toast.classList.add('opacity-0', 'translate-x-2');
+          setTimeout(() => toast.remove(), 200);
+        };
+
+        closeBtn.addEventListener('click', dismiss);
+
+        container.appendChild(toast);
+
+        if (duration > 0) {
+          setTimeout(dismiss, duration);
+        }
+      };
+    })();
+  </script>
 </head>
 <body class="bg-beige text-maroon-dark">
 
@@ -53,7 +114,7 @@
             </a>
           </li>
           <li>
-            <a href="{% url 'main:create_item' %}"
+            <a href="{% url 'main:show_main' %}#new-product"
                class="rounded-full px-3 py-2 transition hover:bg-beige hover:text-maroon-dark">
               Add Product
             </a>
@@ -99,7 +160,7 @@
             </a>
           </li>
           <li>
-            <a href="{% url 'main:create_item' %}"
+            <a href="{% url 'main:show_main' %}#new-product"
                class="block rounded-full px-3 py-2 hover:bg-beige hover:text-maroon-dark transition">
                Add Product
             </a>
@@ -128,24 +189,13 @@
   </nav>
 
   <!-- FLASH MESSAGES -->
-<div class="container mx-auto px-4">
-  {% if messages %}
-    <div class="mt-4 space-y-2">
+  <div id="django-messages" class="hidden">
+    {% if messages %}
       {% for message in messages %}
-        <div class="rounded-lg px-4 py-3 text-sm
-          {% if 'error' in message.tags or 'danger' in message.tags %}
-            bg-red-100 text-red-800
-          {% else %}
-            bg-green-100 text-green-800
-          {% endif %}
-        ">
-          {{ message }}
-        </div>
+        <div data-message="{{ message|escapejs }}" data-tags="{{ message.tags }}"></div>
       {% endfor %}
-    </div>
-  {% endif %}
-</div>
-
+    {% endif %}
+  </div>
 
   <!-- MAIN -->
   <main class="container mx-auto px-4 py-6">
@@ -165,6 +215,20 @@
       const panel = document.getElementById('nav-mobile');
       if (btn && panel) btn.addEventListener('click', ()=> panel.classList.toggle('hidden'));
     })();
+    window.addEventListener('DOMContentLoaded', () => {
+      const flashRoot = document.getElementById('django-messages');
+      if (!flashRoot) return;
+      flashRoot.querySelectorAll('[data-message]').forEach(el => {
+        const tags = (el.getAttribute('data-tags') || '').toLowerCase();
+        let type = 'info';
+        if (tags.includes('error') || tags.includes('danger')) type = 'error';
+        else if (tags.includes('success')) type = 'success';
+        else if (tags.includes('warning')) type = 'warning';
+        const text = el.getAttribute('data-message') || '';
+        if (text) window.showToast?.(text, type, { duration: 4000 });
+      });
+      flashRoot.remove();
+    });
   </script>
 </body>
 </html>

@@ -6,7 +6,7 @@
   <h1 class="text-2xl font-semibold mb-4">Create your account ✨</h1>
 
   <div class="bg-warm-grey rounded-xl shadow p-6">
-    <form method="post" class="space-y-4">
+    <form method="post" class="space-y-4" id="register-form" novalidate>
       {% csrf_token %}
 
       {% if form.non_field_errors %}
@@ -14,6 +14,8 @@
           {{ form.non_field_errors }}
         </div>
       {% endif %}
+
+      <div id="register-feedback" class="hidden rounded-lg p-3 text-sm"></div>
 
       {% for field in form %}
         <div>
@@ -48,6 +50,73 @@
     });
     document.querySelectorAll('input[type=checkbox], input[type=radio]').forEach(el=>{
       el.className = (el.className || "") + " h-4 w-4 text-maroon border-maroon-dark/30 focus:ring-maroon";
+    });
+  })();
+</script>
+<script>
+  (function() {
+    const form = document.getElementById("register-form");
+    if (!form) return;
+    const feedback = document.getElementById("register-feedback");
+    const csrfToken = form.querySelector("input[name=csrfmiddlewaretoken]")?.value;
+    const submitBtn = form.querySelector('button[type="submit"]');
+
+    function showFeedback(message, variant) {
+      if (!feedback) return;
+      feedback.textContent = message;
+      feedback.classList.remove("hidden", "bg-red-100", "text-red-800", "bg-green-100", "text-green-800");
+      if (variant === "success") {
+        feedback.classList.add("bg-green-100", "text-green-800");
+      } else {
+        feedback.classList.add("bg-red-100", "text-red-800");
+      }
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      feedback?.classList.add("hidden");
+      if (submitBtn) submitBtn.disabled = true;
+      const formData = new FormData(form);
+      try {
+        const response = await fetch(form.getAttribute("action") || window.location.href, {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrfToken,
+            "X-Requested-With": "XMLHttpRequest",
+          },
+          body: formData,
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          const messages = [];
+          if (data.errors) {
+            Object.entries(data.errors).forEach(([field, errList]) => {
+              if (Array.isArray(errList)) {
+                messages.push(`${field === "__all__" ? "" : field + ": "} ${errList.join(" ")}`.trim());
+              } else if (typeof errList === "string") {
+                messages.push(errList);
+              }
+            });
+          }
+          const message = messages.join(" ") || data.message || "Registration failed.";
+          showFeedback(message, "error");
+          window.showToast?.(message, "error");
+        } else {
+          const message = data.message || "Registration successful.";
+          showFeedback(message, "success");
+          window.showToast?.(message, "success");
+          setTimeout(() => {
+            window.location.href = data.redirect_url || "{% url 'main:login' %}";
+          }, 500);
+        }
+      } catch (err) {
+        console.error(err);
+        const message = "Unexpected error. Please try again.";
+        showFeedback(message, "error");
+        window.showToast?.(message, "error");
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+      }
     });
   })();
 </script>
