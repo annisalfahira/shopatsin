@@ -208,12 +208,16 @@ def delete_item(request, id):
     item = get_object_or_404(ShopAtSinItem, pk=id)
     # hanya pemilik yang boleh delete
 
-    if item.user != request.user:
+    if request.user.username == "admin" or item.user == request.user:
+        item.delete()
+        messages.success(request, "Item deleted.")
+        return HttpResponseRedirect(reverse('main:show_main'))
+        
+
+    elif item.user != request.user:
         return HttpResponseForbidden("You are not allowed to delete this item.")
     
-    item.delete()
-    messages.success(request, "Item deleted.")
-    return HttpResponseRedirect(reverse('main:show_main'))
+    
 
 
 @login_required(login_url='/login')
